@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1080, initial-scale=1">
+  <title>Assumerai Candidate LinkedIn Launch</title>
+  <link rel="stylesheet" href="shared/assumerai-launch.css">
+  <style>
+    #candidate-root {
+      isolation: isolate;
+    }
+
+    .candidate-scene-content {
+      padding: 86px 76px 82px;
+    }
+
+    .candidate-copy {
+      display: grid;
+      gap: 28px;
+    }
+
+    .candidate-copy .eyebrow,
+    .brand-row > span {
+      color: #143064;
+    }
+
+    .candidate-copy .headline {
+      max-width: 900px;
+    }
+
+    .candidate-copy .microcopy {
+      max-width: 760px;
+    }
+
+    #candidate-s1 .soft-glow {
+      right: -150px;
+      top: 130px;
+    }
+
+    #candidate-s1 .candidate-copy {
+      margin-top: auto;
+      margin-bottom: 88px;
+    }
+
+    .candidate-proof-strip {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #143064;
+      font-size: 18px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .candidate-proof-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: var(--gradient);
+      box-shadow: 0 10px 24px rgba(168, 197, 241, 0.45);
+    }
+
+    .candidate-card-stack {
+      position: relative;
+      width: 100%;
+      height: 620px;
+      margin-top: 12px;
+    }
+
+    .candidate-mini-card {
+      position: absolute;
+      width: 334px;
+    }
+
+    #candidate-cv-card {
+      left: 0;
+      top: 98px;
+      z-index: 1;
+    }
+
+    #candidate-interview-card {
+      left: 250px;
+      top: 20px;
+      width: 426px;
+      z-index: 3;
+    }
+
+    #candidate-scorecard-card {
+      right: 0;
+      top: 104px;
+      z-index: 2;
+    }
+
+    .candidate-mini-card img {
+      width: 100%;
+      display: block;
+    }
+
+    .candidate-outcome-layout {
+      display: grid;
+      grid-template-columns: 520px 1fr;
+      align-items: center;
+      gap: 42px;
+      min-height: 628px;
+    }
+
+    #candidate-outcome-frame {
+      width: 400px;
+      justify-self: center;
+      max-height: 720px;
+    }
+
+    #candidate-outcome-frame img {
+      width: 100%;
+      display: block;
+    }
+
+    .candidate-match-panel {
+      display: grid;
+      gap: 16px;
+    }
+
+    .match-chip {
+      border-radius: 8px;
+      padding: 22px 24px;
+      background: #ffffff;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 20px 56px rgba(15, 23, 42, 0.12);
+    }
+
+    .match-chip strong {
+      display: block;
+      color: var(--brand-navy);
+      font-size: 25px;
+      line-height: 1.05;
+      font-weight: 900;
+    }
+
+    .match-chip span {
+      display: block;
+      margin-top: 8px;
+      color: #1f2937;
+      font-size: 19px;
+      line-height: 1.25;
+      font-weight: 650;
+    }
+
+    #candidate-s4 .scene-content {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 30px;
+    }
+
+    #candidate-s4 .brand-mark {
+      width: 126px;
+      height: 126px;
+      margin-bottom: 10px;
+    }
+
+    #candidate-s4 .brand-mark img {
+      width: 126px;
+      height: 126px;
+      transform: none;
+    }
+
+    #candidate-s4 .headline {
+      max-width: 860px;
+      font-size: 126px;
+      color: var(--brand-navy);
+    }
+
+    #candidate-s4 .microcopy {
+      max-width: 640px;
+      color: rgba(11, 33, 70, 0.72);
+    }
+
+    #candidate-s4 .eyebrow {
+      color: #143064;
+    }
+
+    #candidate-s4 .soft-glow {
+      opacity: 0;
+    }
+
+    #candidate-s4 .gradient-rail {
+      transform-origin: center center;
+    }
+  </style>
+</head>
+<body>
+  <div id="candidate-root" data-composition-id="assumerai-candidate-linkedin" data-width="1080" data-height="1350" data-start="0" data-duration="15">
+    <section id="candidate-s1" class="scene">
+      <div class="soft-glow" data-layout-ignore></div>
+      <div class="scene-content candidate-scene-content">
+        <div class="brand-row">
+          <div class="brand-lockup">
+            <div class="brand-mark" aria-hidden="true"></div>
+            <span>Assumerai</span>
+          </div>
+          <span>Candidate launch</span>
+        </div>
+        <div class="candidate-copy">
+          <span class="eyebrow">Candidate launch</span>
+          <h1 class="headline">Stop repeating yourself.</h1>
+          <p class="microcopy">One CV. One interview.</p>
+          <div class="gradient-rail"></div>
+        </div>
+        <div class="candidate-proof-strip">
+          <span class="candidate-proof-dot"></span>
+          <span>Portable hiring signal</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="candidate-s2" class="scene is-hidden">
+      <div class="scene-content candidate-scene-content">
+        <div class="candidate-copy">
+          <span class="eyebrow">One reusable profile</span>
+          <h2 class="headline">Do the work once.</h2>
+          <p class="microcopy">CV intake. Adaptive interview. One scorecard.</p>
+          <div class="gradient-rail"></div>
+        </div>
+        <div class="candidate-card-stack">
+          <div id="candidate-cv-card" class="product-frame candidate-mini-card">
+            <img src="assets/cards_for_candidates/postal.png" alt="">
+          </div>
+          <div id="candidate-interview-card" class="product-frame candidate-mini-card">
+            <div class="browser-bar">
+              <span class="browser-dot"></span>
+              <span class="browser-dot"></span>
+              <span class="browser-dot"></span>
+            </div>
+            <img src="assets/cards_for_candidates/interview.png" alt="">
+          </div>
+          <div id="candidate-scorecard-card" class="product-frame candidate-mini-card">
+            <img src="assets/cards_for_candidates/scorecard.png" alt="">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="candidate-s3" class="scene is-hidden">
+      <div class="scene-content candidate-scene-content">
+        <div class="candidate-copy">
+          <span class="eyebrow">Matches with context</span>
+          <h2 class="headline">Get matched to companies that fit.</h2>
+          <p class="microcopy">Role context, fit scores, and a real reason every time.</p>
+          <div class="gradient-rail"></div>
+        </div>
+        <div class="candidate-outcome-layout">
+          <div id="candidate-outcome-frame" class="product-frame">
+            <img src="assets/landing/interview-outcomes.png" alt="">
+          </div>
+          <div class="candidate-match-panel">
+            <div class="match-chip">
+              <strong>Role fit</strong>
+              <span>Mapped to the work, not keyword noise.</span>
+            </div>
+            <div class="match-chip">
+              <strong>Company signal</strong>
+              <span>Know why the match makes sense.</span>
+            </div>
+            <div class="match-chip">
+              <strong>Next step</strong>
+              <span>Move with clarity and less repetition.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="candidate-s4" class="scene is-hidden">
+      <div class="soft-glow" style="left: 270px; top: 120px;" data-layout-ignore></div>
+      <div class="scene-content">
+        <div class="brand-mark">
+          <img src="assets/logos/assumer-logo.png" alt="">
+        </div>
+        <span class="eyebrow">Candidate launch</span>
+        <h2 class="headline">Assumerai</h2>
+        <p class="microcopy">Take the interview once.</p>
+        <div class="gradient-rail"></div>
+        <div class="cta-pill">Take the interview</div>
+      </div>
+    </section>
+
+    <div id="candidate-cover" class="transition-cover"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script src="shared/assumerai-motion.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    var tl = gsap.timeline({ paused: true });
+    window.__timelines["assumerai-candidate-linkedin"] = tl;
+
+    AssumerMotion.introScene(tl, "#candidate-s1", 0);
+    tl.from("#candidate-s1 .brand-row", { y: -22, opacity: 0, duration: 0.42, ease: "power2.out" }, 0.16);
+    tl.to("#candidate-s1 .soft-glow", { scale: 1.08, x: 20, duration: 2.2, ease: "sine.inOut" }, 0.2);
+
+    AssumerMotion.sweepToScene(tl, "#candidate-cover", "#candidate-s1", "#candidate-s2", 2.25);
+    AssumerMotion.introScene(tl, "#candidate-s2", 2.65);
+    AssumerMotion.introProduct(tl, "#candidate-cv-card", 3.0, { x: -42, y: 28, duration: 0.58, ease: "power3.out" });
+    AssumerMotion.introProduct(tl, "#candidate-interview-card", 3.26, { y: 44, duration: 0.62, ease: "expo.out" });
+    AssumerMotion.introProduct(tl, "#candidate-scorecard-card", 3.52, { x: 42, y: 28, duration: 0.58, ease: "power2.out" });
+    AssumerMotion.ambientFloat(tl, "#candidate-interview-card", 4.2, 2.2, -10);
+
+    AssumerMotion.sweepToScene(tl, "#candidate-cover", "#candidate-s2", "#candidate-s3", 6.55);
+    AssumerMotion.introScene(tl, "#candidate-s3", 6.95);
+    AssumerMotion.introProduct(tl, "#candidate-outcome-frame", 7.35, { y: 54, scale: 0.95, duration: 0.68, ease: "power3.out" });
+    tl.from("#candidate-s3 .match-chip", { y: 26, opacity: 0, duration: 0.38, stagger: 0.12, ease: "power2.out" }, 8.08);
+
+    AssumerMotion.sweepToScene(tl, "#candidate-cover", "#candidate-s3", "#candidate-s4", 11.55);
+    AssumerMotion.introScene(tl, "#candidate-s4", 11.95);
+    tl.from("#candidate-s4 .brand-mark", { scale: 0.8, opacity: 0, duration: 0.46, ease: "back.out(1.4)" }, 12.1);
+    tl.from("#candidate-s4 .cta-pill", { y: 28, opacity: 0, duration: 0.42, ease: "power3.out" }, 12.7);
+    tl.to("#candidate-s4", { opacity: 0, duration: 0.55, ease: "sine.inOut" }, 14.35);
+  </script>
+</body>
+</html>
