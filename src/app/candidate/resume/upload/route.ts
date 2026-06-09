@@ -7,6 +7,17 @@ import {
   readResumeParserModeFromFormData
 } from "@/features/candidate-flow";
 import {
+  hasAnthropicResumeParserKey,
+  shouldForceLocalResumeParserForCandidateUpload
+} from "@/features/candidate-flow/resume-parser-provider-config";
+import { checkLlmBudget, secondsUntilUtcMidnight } from "@/lib/llm-budget";
+import {
+  clientIpFromHeaders,
+  enforceRateLimit,
+  readRateLimitFromEnv,
+  resolveRateLimitStore
+} from "@/lib/rate-limit";
+import {
   createResumeUploadConfig,
   createSafeResumeUploadError
 } from "@/features/resume-ingestion";
@@ -59,6 +70,56 @@ export async function POST(request: NextRequest) {
     });
     if (isCandidateContextError(candidateContext)) {
       return candidateContextErrorResponse(candidateContext, request, wantsJson);
+    }
+
+    const rate = await enforceRateLimit({
+      store: resolveRateLimitStore(),
+      rule: {
+        bucket: "resume_upload",
+        limit: readRateLimitFromEnv(process.env.RATE_LIMIT_RESUME_UPLOAD_PER_HOUR, 5),
+        windowSeconds: 3600
+      },
+      subjects: [
+        `user:${candidateContext.candidateId}`,
+        `ip:${clientIpFromHeaders(request.headers)}`
+      ]
+    });
+    if (!rate.allowed) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "rate_limited",
+            message: "Too many resume uploads. Wait before uploading again.",
+            status: 429,
+            correlationId
+          }
+        },
+        { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } }
+      );
+    }
+
+    // LLM budget guard: only gates uploads that would hit the Anthropic parser;
+    // the local deterministic parser keeps working when the budget is spent.
+    const wouldUseAnthropicParser =
+      parserMode !== "local" &&
+      !shouldForceLocalResumeParserForCandidateUpload(process.env) &&
+      hasAnthropicResumeParserKey(process.env);
+    if (wouldUseAnthropicParser) {
+      const budget = await checkLlmBudget();
+      if (!budget.allowed) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "llm_budget_exhausted",
+              message:
+                "Resume parsing is temporarily unavailable. Please try again later.",
+              status: 503,
+              correlationId
+            }
+          },
+          { status: 503, headers: { "Retry-After": String(secondsUntilUtcMidnight()) } }
+        );
+      }
     }
 
     const candidateId = candidateContext.candidateId;

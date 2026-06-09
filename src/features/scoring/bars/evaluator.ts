@@ -1,5 +1,6 @@
 import { containsDisallowedQuestionText } from "../../interview-flow/safety";
 import type { StarEvidenceElement } from "../../interview-flow/types";
+import { recordLlmUsage, type LlmUsageRecorder } from "../../../lib/llm-budget/core";
 import {
   barsLevelForScore,
   countCompleteStarElements,
@@ -46,6 +47,8 @@ export interface BarsEvaluatorOptions {
   readonly maxTokens?: number;
   readonly model?: string;
   readonly temperature?: number;
+  /** Usage hook for the daily LLM budget; defaults to the global recorder. */
+  readonly recordUsage?: LlmUsageRecorder;
 }
 
 export type EvaluatorSystemPromptVariant = "default" | "evidence_first" | "star_first";
@@ -72,6 +75,10 @@ interface AnthropicTextBlock {
 
 interface AnthropicMessageResponse {
   readonly content?: readonly AnthropicTextBlock[];
+  readonly usage?: {
+    readonly input_tokens?: number;
+    readonly output_tokens?: number;
+  };
 }
 
 class EvaluatorOutputSafetyError extends Error {
@@ -136,6 +143,11 @@ export async function evaluateResponseWithBars(
       }
 
       const message = (await response.json()) as AnthropicMessageResponse;
+      (input.options?.recordUsage ?? recordLlmUsage)({
+        model,
+        inputTokens: message.usage?.input_tokens ?? 0,
+        outputTokens: message.usage?.output_tokens ?? 0,
+      });
       const parsed = parseJsonObject(extractTextContent(message));
       const evaluation = mapProviderEvaluation(input, parsed, model);
       return evaluation;

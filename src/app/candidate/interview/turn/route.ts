@@ -15,8 +15,18 @@ import {
   persistInterviewSessionSnapshot
 } from "@/features/candidate-persistence/supabase-candidate-store";
 import { conductServerTurn, parseServerTurnRequestBody } from "@/features/interview-flow";
+import { checkLlmBudget, secondsUntilUtcMidnight } from "@/lib/llm-budget";
+import {
+  clientIpFromHeaders,
+  enforceRateLimit,
+  readRateLimitFromEnv,
+  resolveRateLimitStore
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
+
+/** JSON body cap for a single turn (32KB is ample for one spoken answer). */
+export const TURN_MAX_BODY_BYTES = 32 * 1024;
 
 /**
  * Server-authoritative interview turn.
@@ -33,10 +43,46 @@ export async function POST(request: NextRequest) {
     return errorResponse(candidateContext.status, candidateContext.code, candidateContext.message);
   }
 
-  const payload = (await request.json().catch(() => null)) as unknown;
+  const rate = await enforceRateLimit({
+    store: resolveRateLimitStore(),
+    rule: {
+      bucket: "interview_turn",
+      limit: readRateLimitFromEnv(process.env.RATE_LIMIT_TURN_PER_MINUTE, 10),
+      windowSeconds: 60
+    },
+    subjects: [
+      `user:${candidateContext.candidateId}`,
+      `ip:${clientIpFromHeaders(request.headers)}`
+    ]
+  });
+  if (!rate.allowed) {
+    return rateLimitedResponse(rate.retryAfterSeconds);
+  }
+
+  const rawBody = await request.text().catch(() => "");
+  if (new TextEncoder().encode(rawBody).byteLength > TURN_MAX_BODY_BYTES) {
+    return errorResponse(
+      413,
+      "payload_too_large",
+      `Interview turn request bodies are limited to ${TURN_MAX_BODY_BYTES} bytes.`
+    );
+  }
+
+  let payload: unknown = null;
+  try {
+    payload = JSON.parse(rawBody) as unknown;
+  } catch {
+    payload = null;
+  }
   const parsed = parseServerTurnRequestBody(payload);
   if (!parsed.ok) {
     return errorResponse(400, parsed.code, parsed.message);
+  }
+
+  // LLM budget guard: never start an evaluation we are not willing to pay for.
+  const budget = await checkLlmBudget();
+  if (!budget.allowed) {
+    return serviceUnavailableResponse();
   }
 
   const store = resolveServerInterviewStore(candidateContext);
@@ -186,4 +232,30 @@ export async function POST(request: NextRequest) {
 
 function errorResponse(status: number, code: string, message: string) {
   return NextResponse.json({ error: { code, message, status } }, { status });
+}
+
+function rateLimitedResponse(retryAfterSeconds: number) {
+  return NextResponse.json(
+    {
+      error: {
+        code: "rate_limited",
+        message: "Too many interview turns. Wait a moment and try again.",
+        status: 429
+      }
+    },
+    { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+  );
+}
+
+function serviceUnavailableResponse() {
+  return NextResponse.json(
+    {
+      error: {
+        code: "llm_budget_exhausted",
+        message: "The interview service is temporarily unavailable. Please try again later.",
+        status: 503
+      }
+    },
+    { status: 503, headers: { "Retry-After": String(secondsUntilUtcMidnight()) } }
+  );
 }

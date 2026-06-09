@@ -11,6 +11,7 @@ import {
 } from "./interview-language";
 import { assertQuestionBankAllowed, containsDisallowedQuestionText } from "./safety";
 import type { FunnelPhase } from "../scoring/bars/types";
+import { recordLlmUsage, type LlmUsageRecorder } from "../../lib/llm-budget/core";
 import type {
   InterviewQuestion,
   ResumeQuestionGrounding,
@@ -51,6 +52,8 @@ export interface ClaudeResumeQuestionPlanOptions {
   readonly fetchImpl?: FetchLike;
   readonly maxTokens?: number;
   readonly model?: string;
+  /** Usage hook for the daily LLM budget; defaults to the global recorder. */
+  readonly recordUsage?: LlmUsageRecorder;
 }
 
 export interface CreateClaudeResumeQuestionPlanInput {
@@ -91,6 +94,10 @@ interface AnthropicTextBlock {
 
 interface AnthropicMessageResponse {
   readonly content?: readonly AnthropicTextBlock[];
+  readonly usage?: {
+    readonly input_tokens?: number;
+    readonly output_tokens?: number;
+  };
 }
 
 interface AnthropicRequestFailure {
@@ -207,6 +214,11 @@ async function runResumeAwareQuestionPlan(
       }
 
       const message = (await response.json()) as AnthropicMessageResponse;
+      (input.options?.recordUsage ?? recordLlmUsage)({
+        model,
+        inputTokens: message.usage?.input_tokens ?? 0,
+        outputTokens: message.usage?.output_tokens ?? 0
+      });
       const parsed = parseJsonObject(extractTextContent(message));
       const adaptedQuestions = applyClaudeAdaptations(deterministicQuestions, parsed);
 
