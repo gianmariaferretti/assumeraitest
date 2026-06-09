@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  checks:
+    name: Typecheck, lint, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: node --test
+
+  migrations:
+    name: Supabase migrations apply cleanly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Boots the local Supabase stack (Postgres + auth + storage schemas) and
+      # applies every file in supabase/migrations in order; any failing
+      # migration fails the step.
+      - name: Start local stack and apply migrations
+        run: supabase start -x studio,imgproxy,inbucket,realtime,edge-runtime,logflare,vector
+
+      - name: Show migration status
+        run: supabase migration list --local
+
+      - name: Stop stack
+        if: always()
+        run: supabase stop --no-backup

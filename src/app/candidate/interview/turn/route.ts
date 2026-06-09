@@ -16,6 +16,7 @@ import {
 } from "@/features/candidate-persistence/supabase-candidate-store";
 import { conductServerTurn, parseServerTurnRequestBody } from "@/features/interview-flow";
 import { checkLlmBudget, secondsUntilUtcMidnight } from "@/lib/llm-budget";
+import { logInfo, logWarn } from "@/lib/log";
 import {
   clientIpFromHeaders,
   enforceRateLimit,
@@ -38,10 +39,17 @@ export const TURN_MAX_BODY_BYTES = 32 * 1024;
  * rejected with 400, an already-evaluated turn is rejected with 409.
  */
 export async function POST(request: NextRequest) {
+  const correlationId =
+    request.headers.get("x-correlation-id") ?? `turn_${globalThis.crypto.randomUUID()}`;
   const candidateContext = await resolveCandidateRouteContext();
   if (isCandidateContextError(candidateContext)) {
     return errorResponse(candidateContext.status, candidateContext.code, candidateContext.message);
   }
+  const logContext = {
+    route: "/candidate/interview/turn",
+    correlationId,
+    candidateId: candidateContext.candidateId
+  };
 
   const rate = await enforceRateLimit({
     store: resolveRateLimitStore(),
@@ -122,6 +130,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (result.kind === "rejected") {
+    logWarn("interview_turn_rejected", { ...logContext, code: result.code, status: result.status });
     return errorResponse(result.status, result.code, result.message);
   }
 
@@ -183,7 +192,21 @@ export async function POST(request: NextRequest) {
     questionPlan: { source: "server_authoritative_turn", questions: result.session.questions }
   });
 
+  if (persistedModule.status !== "supabase_persisted" && persistedModule.status !== "local_fallback") {
+    logWarn("interview_turn_persistence_degraded", {
+      ...logContext,
+      moduleId: parsed.value.moduleId,
+      persistence: persistedModule.status,
+      detail: persistedModule.detail
+    });
+  }
+
   if (result.kind === "module_closed") {
+    logInfo("interview_module_closed_by_cap", {
+      ...logContext,
+      moduleId: parsed.value.moduleId,
+      reason: result.reason
+    });
     return NextResponse.json({
       outcome: "module_closed",
       reason: result.reason,

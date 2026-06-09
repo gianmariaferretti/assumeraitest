@@ -12,3 +12,18 @@
 .env
 .env.local
 .env.*.local
+
+# OS / editor noise
+.DS_Store
+*.log
+
+# Local agent settings
+.claude/settings.local.json
+
+# Marketing source material (archive outside the product repo)
+starmethod.pdf
+.codex-starmethod-pages/
+videos/
+
+# Supabase local stack
+supabase/.temp

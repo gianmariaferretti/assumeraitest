@@ -5,6 +5,7 @@ import {
   type RawCvRetentionRecord,
   type RetentionJobDeps
 } from "@/features/privacy/retention-job";
+import { logError, logInfo } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   SupabaseStorageProvider,
@@ -69,6 +70,18 @@ export async function GET(request: NextRequest) {
   }
 
   const summary = await runRetentionJob({ deps: createSupabaseRetentionDeps(admin) });
+
+  const logFields = {
+    route: "/api/cron/retention",
+    raw_cv_deleted: summary.rawCvDeleted,
+    raw_media_deleted: summary.rawMediaDeleted,
+    errors: summary.errors
+  };
+  if (summary.errors.length > 0) {
+    logError("retention_run_completed_with_errors", logFields);
+  } else {
+    logInfo("retention_run_completed", logFields);
+  }
 
   return NextResponse.json(
     {
