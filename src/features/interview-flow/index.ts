@@ -36,6 +36,7 @@ export {
 export { createResumeAwareQuestionPlan } from "./resume-question-planner";
 export {
   advanceModule,
+  appendFollowUpQuestionForModule,
   computeGlobalStatus,
   createInterviewSession,
   currentQuestion,
@@ -47,6 +48,33 @@ export {
   type AdvanceModuleInput,
   type AdvanceModuleResult
 } from "./session-state";
+export {
+  buildModuleSessionEnvelope,
+  checkServerCaps,
+  closeModuleGracefully,
+  conductServerTurn,
+  FORBIDDEN_CLIENT_STATE_FIELDS,
+  INTERVIEW_DURATION_GRACE_FACTOR,
+  interviewDurationCapSeconds,
+  issueTurnForModule,
+  MAX_TURN_ELAPSED_SECONDS,
+  maxTurnsForModule,
+  MODULE_SESSION_ENVELOPE_SCHEMA,
+  nextPendingModuleId,
+  parseServerTurnRequestBody,
+  reconstructInterviewSessionFromRows,
+  startModule,
+  type ConductServerTurnInput,
+  type ConductServerTurnResult,
+  type IssuedTurn,
+  type ParseServerTurnRequestResult,
+  type PersistedModuleSessionRow,
+  type ServerTurnRequest
+} from "./server-turn";
+export {
+  competencyForModule,
+  MODULE_COMPETENCY_VERSION
+} from "./module-competencies";
 export {
   conductTurn,
   type ConductTurnCandidateAnswer,

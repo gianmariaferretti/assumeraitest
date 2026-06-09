@@ -414,6 +414,74 @@ export function recordResponseForModule(
   );
 }
 
+/**
+ * Insert a targeted STAR follow-up question into a module sub-session, right
+ * after the question it probes. Used by the server-authoritative turn flow when
+ * the funnel decides `ask_follow_up`: the follow-up becomes the module's current
+ * question so the next answer is recorded against it. Returns undefined when the
+ * follow-up budget disallows another probe (caller proceeds to the next primary).
+ */
+export function appendFollowUpQuestionForModule(
+  session: InterviewSession,
+  moduleId: string,
+  missingStarElements: readonly StarEvidenceElement[],
+  now?: string
+): InterviewSession | undefined {
+  const moduleSession = session.module_sessions[moduleId];
+  if (!moduleSession) {
+    throw new Error(`Interview module session ${moduleId} was not found.`);
+  }
+
+  const lastResponse = moduleSession.responses[moduleSession.responses.length - 1];
+  if (!lastResponse) {
+    return undefined;
+  }
+  const parentIndex = moduleSession.questions.findIndex(
+    (question) => question.id === lastResponse.questionId
+  );
+  const parentQuestion = moduleSession.questions[parentIndex];
+  if (!parentQuestion || !canAskFollowUp(session, parentQuestion, moduleSession.followUpCounts)) {
+    return undefined;
+  }
+
+  const missingStarElement = missingStarElements.find((element) =>
+    Object.prototype.hasOwnProperty.call(STAR_ELEMENT_PROMPTS.en, element)
+  );
+  const followUpCounts = copyFollowUpCounts(moduleSession.followUpCounts);
+  const followUpNumber = (followUpCounts.byQuestion[parentQuestion.id] ?? 0) + 1;
+  const followUpQuestion = createFollowUpQuestion(
+    parentQuestion,
+    missingStarElement ? COMPLETE_STAR_ELEMENT_FOLLOW_UP_REASON : "clarify_evidence",
+    followUpNumber,
+    session.interviewLanguage,
+    missingStarElement
+  );
+
+  followUpCounts.total += 1;
+  followUpCounts.byQuestion[parentQuestion.id] = followUpNumber;
+  followUpCounts.byModule[parentQuestion.moduleId] =
+    (followUpCounts.byModule[parentQuestion.moduleId] ?? 0) + 1;
+
+  const questions = [...moduleSession.questions];
+  questions.splice(parentIndex + 1, 0, followUpQuestion);
+
+  const updatedModuleSession: ModuleSession = {
+    ...moduleSession,
+    state: "in_progress",
+    questions,
+    currentQuestionId: followUpQuestion.id,
+    followUpCounts,
+    completedAt: undefined
+  };
+
+  return mirrorActiveModule(
+    session,
+    { ...session.module_sessions, [moduleId]: updatedModuleSession },
+    moduleId,
+    nowIso(now)
+  );
+}
+
 export interface AdvanceModuleInput {
   /** Newly observed STAR evidence from the latest evaluation. */
   observedStar?: Partial<StarCompleteness>;
