@@ -1,0 +1,305 @@
+.shell {
+  background: #ffffff;
+  color: #111c19;
+  display: grid;
+  gap: clamp(8px, 1.5vh, 14px);
+  grid-template-rows: auto minmax(0, 1fr);
+  height: calc(100dvh - 61px);
+  overflow: hidden;
+  padding: clamp(12px, 2vh, 20px) clamp(18px, 4vw, 42px) clamp(12px, 2vh, 18px);
+}
+
+.progress {
+  margin-bottom: 0;
+}
+
+.stage {
+  align-content: center;
+  align-items: center;
+  display: grid;
+  gap: clamp(7px, 1.3vh, 12px);
+  grid-template-rows: auto auto auto auto auto;
+  height: 100%;
+  justify-items: center;
+  margin: 0 auto;
+  max-width: 1120px;
+  min-height: 0;
+  text-align: center;
+}
+
+.copy {
+  display: grid;
+  justify-items: center;
+  max-width: 680px;
+}
+
+.copy h1 {
+  font-size: clamp(1.15rem, 2vw, 1.7rem);
+  font-weight: 550;
+  line-height: 1.05;
+  margin: 0;
+}
+
+.affirmation {
+  color: #111c19;
+  font-size: clamp(1.15rem, 2.4vw, 2rem);
+  font-weight: 650;
+  line-height: 1.02;
+  min-height: 1.1em;
+  position: relative;
+  z-index: 1;
+}
+
+.device {
+  align-self: center;
+  aspect-ratio: 1.15;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(245, 247, 242, 0.96)),
+    #f5f7f2;
+  border: 1px solid rgba(17, 28, 25, 0.12);
+  border-radius: clamp(34px, 6vw, 54px);
+  box-shadow:
+    0 28px 70px rgba(17, 28, 25, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -18px 42px rgba(17, 28, 25, 0.06);
+  display: grid;
+  gap: 8px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  max-height: min(46vh, 360px);
+  max-width: min(64vw, 430px);
+  min-height: 0;
+  padding: 10px;
+  position: relative;
+  width: 100%;
+  z-index: 0;
+}
+
+.cameraDot {
+  background: #111c19;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  box-shadow: 0 2px 12px rgba(17, 28, 25, 0.2);
+  height: 18px;
+  left: 50%;
+  position: absolute;
+  top: 12px;
+  transform: translateX(-50%);
+  width: 18px;
+}
+
+.preview {
+  background:
+    radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.12), transparent 32%),
+    #111c19;
+  border-radius: clamp(24px, 4vw, 36px);
+  display: grid;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.preview video,
+.previewPlaceholder {
+  grid-area: 1 / 1;
+  height: 100%;
+  width: 100%;
+}
+
+.preview video {
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.previewPlaceholder {
+  align-content: center;
+  color: #ffffff;
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  padding: 18px;
+}
+
+.previewPlaceholder span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.previewPlaceholder strong {
+  font-size: clamp(1.1rem, 3vw, 1.7rem);
+}
+
+.microphoneDock {
+  align-items: end;
+  background: #ffffff;
+  border: 1px solid rgba(17, 28, 25, 0.1);
+  border-radius: 999px;
+  display: grid;
+  gap: 3px;
+  grid-template-columns: repeat(18, minmax(0, 1fr));
+  height: 31px;
+  padding: 7px 11px;
+}
+
+.microphoneDock span {
+  background: #dce2dc;
+  border-radius: 999px;
+  height: 8px;
+  transition:
+    background 160ms ease,
+    height 160ms ease;
+}
+
+.microphoneDock span[data-active="true"] {
+  background: #111c19;
+  height: 17px;
+}
+
+.controls {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 720px;
+  width: 100%;
+}
+
+.control {
+  border: 1px solid rgba(17, 28, 25, 0.14);
+  border-radius: 14px;
+  display: grid;
+  gap: 9px;
+  padding: 11px 13px;
+  text-align: left;
+}
+
+.control[data-status="ready"] {
+  background: #f5f7f2;
+}
+
+.control div {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.control span {
+  color: #5d6965;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.control strong {
+  color: #111c19;
+  font-size: 0.92rem;
+}
+
+.actions span,
+.control span {
+  color: #5d6965;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.control button,
+.actions button {
+  border: 1px solid #111c19;
+  border-radius: 18px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  min-height: 40px;
+  padding: 9px 13px;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.control button {
+  background: #ffffff;
+  color: #111c19;
+}
+
+.actions button {
+  background: #111c19;
+  color: #ffffff;
+}
+
+.control button:active,
+.actions button:active {
+  transform: translateY(1px);
+}
+
+.control button:disabled,
+.actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.srOnly {
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  position: absolute;
+  width: 1px;
+}
+
+@media (max-width: 740px) {
+  .shell {
+    height: auto;
+    min-height: calc(100dvh - 61px);
+    overflow: visible;
+    padding: 18px;
+  }
+
+  .stage {
+    grid-template-rows: none;
+    height: auto;
+  }
+
+  .device {
+    aspect-ratio: 1.05;
+    max-height: none;
+    max-width: min(92vw, 340px);
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .actions,
+  .actions button {
+    width: 100%;
+  }
+}
+
+@media (max-height: 760px) and (min-width: 741px) {
+  .shell {
+    height: auto;
+    min-height: calc(100dvh - 61px);
+    overflow: visible;
+  }
+
+  .stage {
+    grid-template-rows: none;
+    height: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control button,
+  .actions button,
+  .microphoneDock span {
+    transition-duration: 1ms;
+  }
+}

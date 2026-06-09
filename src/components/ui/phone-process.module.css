@@ -1,0 +1,732 @@
+.process {
+    --process-accent: #2563eb;
+    --process-accent-strong: #1d4ed8;
+    --process-accent-soft: #dbeafe;
+    --process-cyan: #06b6d4;
+    --process-border: rgb(148 163 184 / 24%);
+    --process-muted: #64748b;
+    --process-sticky-top: 72px;
+    --process-text: #0f172a;
+
+    background: #ffffff;
+    color: var(--process-text);
+    font-family: var(--font-geist-sans), sans-serif;
+    overflow: visible;
+    position: relative;
+    scroll-margin-top: var(--process-sticky-top);
+}
+
+.scrollWrapper {
+    height: calc(330vh + 8rem);
+    isolation: isolate;
+    position: relative;
+}
+
+.stickyViewport {
+    align-items: center;
+    display: grid;
+    gap: clamp(2rem, 7vw, 6rem);
+    grid-template-columns: minmax(300px, 440px) minmax(0, 540px);
+    height: calc(100svh - var(--process-sticky-top));
+    justify-content: center;
+    margin: 0 auto;
+    max-width: 1160px;
+    padding: 0 clamp(1.5rem, 4vw, 3rem);
+    pointer-events: none;
+    position: sticky;
+    top: var(--process-sticky-top);
+    z-index: 1;
+}
+
+.copyPanel {
+    pointer-events: auto;
+}
+
+.processTitle {
+    color: var(--process-text);
+    display: inline-block;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: clamp(2.2rem, 4.8vw, 4.5rem);
+    font-weight: 300;
+    letter-spacing: -0.05em;
+    line-height: 0.98;
+    margin: 0;
+    max-width: 12ch;
+    position: relative;
+    z-index: 0;
+}
+
+.copyText {
+    color: var(--process-muted);
+    font-size: clamp(1rem, 1.4vw, 1.12rem);
+    line-height: 1.55;
+    margin: 1rem 0 1.15rem;
+    max-width: 34rem;
+}
+
+.mobileStepCopyStage {
+    display: none;
+}
+
+.stepList {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.sideStep {
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
+    backdrop-filter: blur(22px) saturate(150%);
+    background:
+        linear-gradient(135deg, rgb(255 255 255 / 68%), rgb(255 255 255 / 34%)),
+        linear-gradient(120deg, rgb(255 255 255 / 52%), rgb(255 255 255 / 12%));
+    border: 1px solid rgb(255 255 255 / 68%);
+    border-radius: 8px;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 78%),
+        inset 0 -1px 0 rgb(255 255 255 / 28%),
+        0 18px 50px rgb(15 23 42 / 7%),
+        0 1px 0 rgb(255 255 255 / 42%);
+    opacity: 0.72;
+    padding: 0.82rem 0.95rem;
+    position: relative;
+    transform: translateX(0);
+    transition:
+        background 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.3s ease,
+        opacity 0.3s ease,
+        transform 0.3s ease;
+}
+
+.sideStepActive {
+    background:
+        linear-gradient(135deg, rgb(255 255 255 / 84%), rgb(255 255 255 / 48%)),
+        linear-gradient(120deg, rgb(219 234 254 / 46%), rgb(255 232 245 / 28%));
+    border-color: rgb(255 255 255 / 88%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 90%),
+        inset 0 -1px 0 rgb(255 255 255 / 32%),
+        0 22px 64px rgb(37 99 235 / 11%),
+        0 16px 48px rgb(244 114 182 / 8%);
+    opacity: 1;
+    transform: translateX(0.25rem);
+}
+
+.sideStepLayout {
+    align-items: start;
+    display: grid;
+    gap: 0.78rem;
+    grid-template-columns: 4rem minmax(0, 1fr);
+}
+
+.sideStepNumber {
+    color: #ef2b2b;
+    display: block;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: clamp(2rem, 3.3vw, 3rem);
+    font-weight: 900;
+    letter-spacing: -0.1em;
+    line-height: 0.86;
+    margin-top: -0.08em;
+    transform: rotate(-3deg);
+}
+
+.sideStepCopy {
+    min-width: 0;
+}
+
+.sideStepTitle {
+    color: var(--process-text);
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.sideStepBody {
+    color: var(--process-muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+    margin: 0.6rem 0 0;
+}
+
+.panel {
+    height: 100vh;
+    left: 0;
+    pointer-events: none;
+    position: absolute;
+    width: 100%;
+}
+
+.phoneStage {
+    align-items: center;
+    display: flex;
+    height: 640px;
+    justify-content: center;
+    pointer-events: none;
+    width: 310px;
+}
+
+.phoneBezel {
+    background: #171717;
+    border-radius: 3rem;
+    box-shadow:
+        inset 0 0 0 2px #3f3f46,
+        inset 0 0 0 7px #050505,
+        0 42px 82px -18px rgb(0 0 0 / 50%),
+        0 18px 32px -8px rgb(0 0 0 / 34%);
+    flex: 0 0 auto;
+    height: 445px;
+    pointer-events: auto;
+    position: relative;
+    transform: scale(1.36);
+    transform-origin: center;
+    width: 210px;
+}
+
+.phoneButton {
+    background: linear-gradient(90deg, #444 0%, #171717 100%);
+    border-radius: 2px;
+    box-shadow:
+        -2px 0 4px rgb(0 0 0 / 70%),
+        inset -1px 0 1px rgb(255 255 255 / 12%);
+    position: absolute;
+}
+
+.phoneButtonVolumeUp {
+    height: 22px;
+    left: -3px;
+    top: 100px;
+    width: 3px;
+}
+
+.phoneButtonVolumeDown {
+    height: 38px;
+    left: -3px;
+    top: 134px;
+    width: 3px;
+}
+
+.phoneButtonPower {
+    background: linear-gradient(270deg, #444 0%, #171717 100%);
+    height: 56px;
+    right: -3px;
+    top: 148px;
+    width: 3px;
+}
+
+.phoneScreen {
+    background: #ffffff;
+    border-radius: 2.5rem;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    inset: 7px;
+    overflow: hidden;
+    position: absolute;
+}
+
+.phoneGlare {
+    background: linear-gradient(115deg, rgb(255 255 255 / 7%) 0%, transparent 45%);
+    border-radius: inherit;
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: 40;
+}
+
+.phoneNotch {
+    align-items: center;
+    background: #000;
+    border-radius: 20px;
+    display: flex;
+    height: 24px;
+    justify-content: flex-end;
+    left: 50%;
+    padding-right: 8px;
+    position: absolute;
+    top: 5px;
+    transform: translateX(-50%);
+    width: 88px;
+    z-index: 50;
+}
+
+.phoneNotchCamera {
+    background: #1a1a1a;
+    border-radius: 999px;
+    box-shadow:
+        0 0 0 1px #2a2a2a,
+        inset 0 0 3px rgb(0 0 0 / 90%);
+    height: 6px;
+    width: 6px;
+}
+
+.phoneStatusBar {
+    align-items: center;
+    color: #0f172a;
+    display: flex;
+    flex: 0 0 auto;
+    font-size: 9px;
+    font-weight: 700;
+    justify-content: space-between;
+    padding: 10px 14px 0;
+    position: relative;
+    z-index: 10;
+}
+
+.phoneAppHeader {
+    align-items: center;
+    border-bottom: 1px solid rgb(226 232 240 / 78%);
+    display: flex;
+    flex: 0 0 auto;
+    gap: 8px;
+    padding: 38px 14px 8px;
+}
+
+.phoneAppAvatar {
+    align-items: center;
+    background: #f4f4f5;
+    border-radius: 999px;
+    color: #171717;
+    display: flex;
+    flex: 0 0 auto;
+    height: 30px;
+    justify-content: center;
+    overflow: hidden;
+    width: 30px;
+}
+
+.phoneAppLogo {
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.25);
+    width: 100%;
+}
+
+.phoneAppName {
+    color: #020617;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+}
+
+.phoneCardsContainer {
+    flex: 1;
+    overflow: hidden;
+    padding: 8px 12px 0;
+    position: relative;
+}
+
+.phoneCard {
+    background:
+        linear-gradient(145deg, rgb(255 255 255 / 98%) 0%, rgb(248 250 252 / 94%) 100%),
+        radial-gradient(circle at 18% 0%, rgb(219 234 254 / 70%), transparent 8rem);
+    border: 1px solid rgb(226 232 240 / 88%);
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 24%);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    inset: 8px 12px 0;
+    opacity: 0;
+    padding: 12px;
+    pointer-events: none;
+    position: absolute;
+    transform: translateY(30px) scale(0.96);
+    transition:
+        opacity 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, opacity;
+}
+
+.phoneCardActive {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.phoneCardExit {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+    transition:
+        opacity 0.35s ease-in,
+        transform 0.35s ease-in;
+}
+
+.phoneCardMeta {
+    align-items: center;
+    color: #64748b;
+    display: flex;
+    font-size: 8px;
+    font-weight: 800;
+    justify-content: space-between;
+    text-transform: uppercase;
+}
+
+.phoneBadge {
+    background: #dbeafe;
+    border-radius: 999px;
+    color: #1d4ed8;
+    font-size: 8px;
+    font-weight: 800;
+    padding: 0.34rem 0.48rem;
+    text-transform: none;
+}
+
+.phoneBadgeSuccess {
+    background: #ccfbf1;
+    color: #0f766e;
+}
+
+.phoneCardTitle {
+    color: #0b1f44;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.08;
+    margin: 0;
+}
+
+.phoneCardBody {
+    color: #5f718c;
+    font-size: 8.1px;
+    line-height: 1.32;
+    margin: 0;
+}
+
+.phoneStepCount {
+    color: #64748b;
+    flex: 0 0 auto;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 7px 0 3px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.phoneHomeIndicator {
+    background: rgb(15 23 42 / 18%);
+    border-radius: 3px;
+    flex: 0 0 auto;
+    height: 3px;
+    margin: 6px auto 8px;
+    width: 90px;
+}
+
+.uploadFileRow {
+    align-items: center;
+    background: rgb(255 255 255 / 82%);
+    border: 1px solid rgb(226 232 240 / 80%);
+    border-radius: 14px;
+    box-shadow: 0 12px 24px rgb(15 23 42 / 5%);
+    display: flex;
+    gap: 9px;
+    margin-top: auto;
+    padding: 8px;
+}
+
+.uploadFileIcon {
+    align-items: center;
+    background: #dbeafe;
+    border-radius: 10px;
+    color: var(--process-accent);
+    display: flex;
+    flex: 0 0 auto;
+    font-size: 8px;
+    font-weight: 900;
+    height: 30px;
+    justify-content: center;
+    width: 30px;
+}
+
+.uploadFileBody {
+    flex: 1;
+    min-width: 0;
+}
+
+.uploadFileTop {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.uploadFileName {
+    color: #0b1f44;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.uploadReady {
+    color: #10b981;
+    flex: 0 0 auto;
+    font-size: 7px;
+    font-weight: 800;
+}
+
+.uploadProgress {
+    background: #dbeafe;
+    border-radius: 999px;
+    height: 3px;
+    overflow: hidden;
+}
+
+.uploadProgressBar {
+    background: linear-gradient(90deg, #22d3ee, #10b981);
+    border-radius: inherit;
+    display: block;
+    height: 100%;
+    width: 92%;
+}
+
+.moduleList {
+    display: grid;
+    gap: 5px;
+    margin-top: auto;
+}
+
+.moduleRow {
+    align-items: center;
+    background: rgb(255 255 255 / 82%);
+    border: 1px solid rgb(226 232 240 / 70%);
+    border-radius: 10px;
+    box-shadow: 0 8px 16px rgb(15 23 42 / 4%);
+    display: grid;
+    gap: 6px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 25px;
+    padding: 5px 7px;
+}
+
+.moduleName {
+    color: #0b1f44;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.moduleMeta {
+    color: #7c8da6;
+    font-size: 6.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.matchList {
+    display: grid;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.matchRow {
+    align-items: center;
+    background: rgb(255 255 255 / 86%);
+    border: 1px solid rgb(226 232 240 / 72%);
+    border-radius: 10px;
+    box-shadow: 0 8px 16px rgb(15 23 42 / 4%);
+    display: grid;
+    gap: 5px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-height: 29px;
+    padding: 4px 6px;
+}
+
+.matchLogo {
+    align-items: center;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    display: flex;
+    height: 20px;
+    justify-content: center;
+    overflow: hidden;
+    width: 20px;
+}
+
+.matchLogoImage {
+    height: 100%;
+    object-fit: contain;
+    padding: 2px;
+    width: 100%;
+}
+
+.matchInfo {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+}
+
+.matchRole {
+    color: #0b1f44;
+    font-size: 7.1px;
+    font-weight: 800;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.matchLocation {
+    color: #64748b;
+    font-size: 6.3px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.matchScore {
+    color: #10b981;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+@media (max-height: 720px) and (min-width: 901px) {
+    .phoneStage {
+        height: 560px;
+        width: 270px;
+    }
+
+    .phoneBezel {
+        transform: scale(1.18);
+    }
+}
+
+@media (max-width: 900px) {
+    .stickyViewport {
+        gap: 1rem;
+        grid-template-columns: minmax(0, 210px) minmax(0, 1fr);
+        padding: 0 1.1rem;
+    }
+
+    .phoneStage {
+        height: 445px;
+        width: 210px;
+    }
+
+    .phoneBezel {
+        transform: none;
+    }
+
+    .copyPanel {
+        max-width: 12rem;
+        transform: translateY(0.9rem);
+        transition:
+            opacity 0.55s ease,
+            transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: transform;
+    }
+
+    .copyText,
+    .stepList {
+        display: none;
+    }
+
+    .mobileStepCopyStage {
+        display: block;
+        margin-top: 0.8rem;
+        min-height: 6.2rem;
+        position: relative;
+    }
+
+    .mobileStepCopy {
+        display: grid;
+        gap: 0.35rem;
+        inset: 0;
+        opacity: 0;
+        position: absolute;
+        transform: translateY(0.55rem);
+        transition:
+            opacity 0.32s ease,
+            transform 0.32s ease;
+        will-change: opacity, transform;
+    }
+
+    .processEngaged .copyPanel {
+        transform: translateY(-3rem);
+    }
+
+    .processStepCopyVisible .mobileStepCopyActive {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .processStepCopyVisible .mobileStepCopyExit {
+        opacity: 0;
+        transform: translateY(-0.45rem);
+    }
+
+    .mobileStepTitle {
+        color: var(--process-text);
+        font-size: clamp(0.78rem, 3vw, 1rem);
+        font-weight: 750;
+        line-height: 1.12;
+        margin: 0;
+    }
+
+    .mobileStepBody {
+        color: var(--process-muted);
+        font-size: clamp(0.66rem, 2.55vw, 0.78rem);
+        font-weight: 500;
+        line-height: 1.35;
+        margin: 0;
+    }
+
+    .processTitle {
+        font-size: clamp(0.98rem, 3.9vw, 1.4rem);
+        max-width: 11ch;
+    }
+
+}
+
+@media (max-width: 540px) {
+    .stickyViewport {
+        gap: 0.8rem;
+        grid-template-columns: 200px minmax(0, 1fr);
+        padding: 0 0.9rem;
+    }
+
+    .phoneStage {
+        height: 425px;
+        width: 200px;
+    }
+
+    .phoneBezel {
+        transform: scale(0.955);
+    }
+
+    .copyPanel {
+        max-width: 10rem;
+        transform: translateY(0.6rem);
+    }
+
+    .processEngaged .copyPanel {
+        transform: translateY(-2.4rem);
+    }
+
+    .mobileStepCopyStage {
+        min-height: 6rem;
+    }
+
+    .processTitle {
+        font-size: clamp(0.86rem, 3.7vw, 1.18rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .phoneCard,
+    .phoneCardExit,
+    .sideStep,
+    .mobileStepCopy {
+        animation: none;
+        transition: none;
+    }
+}

@@ -1,0 +1,86 @@
+.transitionStage {
+  isolation: isolate;
+  position: relative;
+}
+
+.transitionCopy {
+  animation: resumeTransitionTextEnter 760ms cubic-bezier(0.16, 1, 0.3, 1)
+    both;
+  transform-origin: 50% 58%;
+  will-change: opacity, transform;
+}
+
+.transitionAction {
+  animation: resumeTransitionActionEnter 640ms cubic-bezier(0.16, 1, 0.3, 1)
+    180ms both;
+  will-change: opacity, transform;
+}
+
+.transitionStageExit .transitionCopy {
+  animation: resumeTransitionTextExit 520ms cubic-bezier(0.7, 0, 0.2, 1)
+    both;
+}
+
+.transitionStageExit .transitionAction {
+  animation: resumeTransitionActionExit 360ms cubic-bezier(0.7, 0, 0.2, 1)
+    both;
+  pointer-events: none;
+}
+
+@keyframes resumeTransitionTextEnter {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.985);
+  }
+  62% {
+    opacity: 1;
+    transform: translate3d(0, -2px, 0) scale(1.002);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes resumeTransitionTextExit {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -18px, 0) scale(1.008);
+  }
+}
+
+@keyframes resumeTransitionActionEnter {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes resumeTransitionActionExit {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transitionCopy,
+  .transitionAction,
+  .transitionStageExit .transitionCopy,
+  .transitionStageExit .transitionAction {
+    animation-duration: 1ms;
+    transform: none;
+  }
+}
