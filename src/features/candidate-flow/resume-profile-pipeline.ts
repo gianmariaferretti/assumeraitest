@@ -10,6 +10,7 @@ import {
   type SafeResumeUploadError,
   type StorageProvider
 } from "../resume-ingestion";
+import { SupabaseStorageProvider } from "../../lib/storage/supabase-storage-provider";
 import type { ResumeParserRuntimeMode } from "./resume-parser-mode";
 import {
   hasAnthropicResumeParserKey,
@@ -237,6 +238,26 @@ export function createInMemoryCandidateResumeProfileSessionStore(
   };
 }
 
+/**
+ * Default storage: the private Supabase bucket in production (raw CVs must
+ * survive serverless instances and be retention-managed); in-memory only under
+ * NODE_ENV=test, and in local dev when no service role is configured.
+ */
+function createDefaultStorageProvider(): StorageProvider {
+  if (process.env.NODE_ENV === "test") {
+    return new InMemoryStorageProvider();
+  }
+
+  const supabaseStorageConfigured = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+  if (process.env.NODE_ENV === "production" || supabaseStorageConfigured) {
+    return new SupabaseStorageProvider();
+  }
+
+  return new InMemoryStorageProvider();
+}
+
 function createDefaultResumeProfileSessionStore(): CandidateResumeProfileSessionStore {
   if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "production") {
     return createSharedInMemoryCandidateResumeProfileSessionStore();
@@ -313,7 +334,7 @@ class InMemoryCandidateResumeProfilePipeline implements CandidateResumeProfilePi
   private readonly now?: Date | (() => Date);
 
   constructor(options: CandidateResumeProfilePipelineOptions) {
-    this.storage = options.storage ?? new InMemoryStorageProvider();
+    this.storage = options.storage ?? createDefaultStorageProvider();
     this.provider = options.provider ?? createDefaultResumeParserProvider();
     this.sessions =
       options.sessionStore ??
