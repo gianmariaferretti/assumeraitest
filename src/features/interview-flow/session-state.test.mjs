@@ -1,43 +1,7 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
-import vm from "node:vm";
 
-import ts from "typescript";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.resolve(__dirname, "../../..");
-const cache = new Map();
-
-function load(absPath) {
-  if (cache.has(absPath)) return cache.get(absPath);
-  const source = readFileSync(absPath, "utf8");
-  const output = ts.transpileModule(source, {
-    compilerOptions: {
-      esModuleInterop: true,
-      module: ts.ModuleKind.CommonJS,
-      target: ts.ScriptTarget.ES2022,
-    },
-    fileName: absPath,
-  }).outputText;
-  const mod = { exports: {} };
-  cache.set(absPath, mod.exports);
-  const dir = path.dirname(absPath);
-  const requireShim = (req) => {
-    let target = path.resolve(dir, req);
-    if (!target.endsWith(".ts")) target += ".ts";
-    return load(target);
-  };
-  vm.runInNewContext(
-    output,
-    { exports: mod.exports, module: mod, require: requireShim, process, console },
-    { filename: absPath },
-  );
-  cache.set(absPath, mod.exports);
-  return mod.exports;
-}
+import { loadFromRepoRoot } from "../../test-helpers/ts-loader.mjs";
 
 const {
   createInterviewSession,
@@ -46,7 +10,10 @@ const {
   computeGlobalStatus,
   serializeInterviewSession,
   resumeInterviewSession,
-} = load(path.join(rootDir, "src/features/interview-flow/session-state.ts"));
+} = loadFromRepoRoot("src/features/interview-flow/session-state.ts");
+const { applyDecision } = loadFromRepoRoot(
+  "src/features/interview-flow/funnel-state-machine.ts",
+);
 
 const roleProfile = {
   role_id: "role_sdr",
@@ -147,6 +114,22 @@ test("serialize + resume restores the exact per-module state", () => {
 
 test("advanceModule applies the funnel state machine and returns a decision", () => {
   const session = newSession();
+  // Drive the module into exploration with one primary question already asked,
+  // so the observed STAR evidence belongs to the current question and the next
+  // decision does not reset it (ask_primary_question starts a fresh STAR slate).
+  let funnelState = session.module_sessions.motivation.funnelState;
+  funnelState = applyDecision(
+    funnelState,
+    { kind: "advance_phase", phase: "exploration", reason: "" },
+    50,
+  );
+  funnelState = applyDecision(
+    funnelState,
+    { kind: "ask_primary_question", phase: "exploration", reason: "" },
+    30,
+  );
+  session.module_sessions.motivation.funnelState = funnelState;
+
   const { session: advanced, decision } = advanceModule(session, "motivation", {
     observedStar: { situation: true, task: true },
     currentQuestionStarTarget: ["situation", "task", "action", "result"],

@@ -1,48 +1,10 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
-import vm from "node:vm";
 
-import ts from "typescript";
+import { loadFromRepoRoot } from "../../test-helpers/ts-loader.mjs";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.resolve(__dirname, "../../..");
-const cache = new Map();
-
-function load(absPath) {
-  if (cache.has(absPath)) return cache.get(absPath);
-  const source = readFileSync(absPath, "utf8");
-  const output = ts.transpileModule(source, {
-    compilerOptions: {
-      esModuleInterop: true,
-      module: ts.ModuleKind.CommonJS,
-      target: ts.ScriptTarget.ES2022,
-    },
-    fileName: absPath,
-  }).outputText;
-  const mod = { exports: {} };
-  cache.set(absPath, mod.exports);
-  const dir = path.dirname(absPath);
-  const requireShim = (req) => {
-    let target = path.resolve(dir, req);
-    if (!target.endsWith(".ts")) target += ".ts";
-    return load(target);
-  };
-  vm.runInNewContext(
-    output,
-    { exports: mod.exports, module: mod, require: requireShim, process, console },
-    { filename: absPath },
-  );
-  cache.set(absPath, mod.exports);
-  return mod.exports;
-}
-
-const { toModulePlan, CORE_MODULE_ID } = load(
-  path.join(rootDir, "src/features/roles/module-plan-adapter.ts"),
-);
-const { validateModulePlan } = load(path.join(rootDir, "src/features/roles/role-profile.ts"));
+const { toModulePlan, CORE_MODULE_ID } = loadFromRepoRoot("src/features/roles/module-plan-adapter.ts");
+const { validateModulePlan } = loadFromRepoRoot("src/features/roles/role-profile.ts");
 
 test("derives a required plan from legacy interview_modules with motivation core", () => {
   const plan = toModulePlan({ interview_modules: ["sales", "coding"] });
