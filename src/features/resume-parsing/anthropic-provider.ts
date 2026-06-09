@@ -4,6 +4,7 @@ import {
   type ResumeParserProvider,
   type ResumeParserProviderResult
 } from "./contracts";
+import { recordLlmUsage, type LlmUsageRecorder } from "../../lib/llm-budget/core";
 
 const ANTHROPIC_API_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_API_VERSION = "2023-06-01";
@@ -21,6 +22,8 @@ interface AnthropicResumeParserProviderOptions {
   readonly fetchImpl?: FetchLike;
   readonly maxTokens?: number;
   readonly model?: string;
+  /** Usage hook for the daily LLM budget; defaults to the global recorder. */
+  readonly recordUsage?: LlmUsageRecorder;
 }
 
 interface AnthropicTextBlock {
@@ -30,6 +33,10 @@ interface AnthropicTextBlock {
 
 interface AnthropicMessageResponse {
   readonly content?: readonly AnthropicTextBlock[];
+  readonly usage?: {
+    readonly input_tokens?: number;
+    readonly output_tokens?: number;
+  };
 }
 
 type AnthropicUserContentBlock =
@@ -104,6 +111,11 @@ export function createAnthropicResumeParserProvider(
         }
 
         const message = (await response.json()) as AnthropicMessageResponse;
+        (options.recordUsage ?? recordLlmUsage)({
+          model: candidateModel,
+          inputTokens: message.usage?.input_tokens ?? 0,
+          outputTokens: message.usage?.output_tokens ?? 0
+        });
         const text = extractTextContent(message);
         const parsed = parseJsonObject(text);
 

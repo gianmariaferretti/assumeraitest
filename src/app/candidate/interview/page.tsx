@@ -23,6 +23,7 @@ import {
   selectQuestionBankForRole
 } from "@/features/interview-flow";
 import { interviewDeviceCheckPath } from "@/features/live-interview";
+import { checkLlmBudget } from "@/lib/llm-budget";
 import {
   scoreResume,
   type ResumeScorecard
@@ -103,6 +104,9 @@ export default async function CandidateInterviewPage() {
   let questionPlanAudit;
   if (!serverSession) {
     const resumeScorecard = createResumeScorecard(candidateProfile);
+    // When the daily LLM budget is exhausted the planner falls back to its
+    // deterministic plan instead of calling the API (apiKey: null).
+    const budget = await checkLlmBudget();
     const questionPlan = candidateProfile
       ? await createClaudeResumeAwareQuestionPlan({
           questions: selectQuestionBankForRole(
@@ -113,7 +117,8 @@ export default async function CandidateInterviewPage() {
           roleProfile: candidateInterviewPreviewRole,
           candidateProfile,
           interviewLanguage,
-          resumeScorecard
+          resumeScorecard,
+          ...(budget.allowed ? {} : { options: { apiKey: null } })
         })
       : undefined;
     const created = await createServerInterviewSession(store, candidateContext.candidateId, {

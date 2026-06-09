@@ -8,7 +8,13 @@ export type {
 export { createResumeUploadConfig } from "./config";
 export { createSafeResumeUploadError } from "./errors";
 export { ingestResumeDocument } from "./service";
-export { getFileExtension, validateResumeFile } from "./validation";
+export {
+  getFileExtension,
+  sniffResumeContentType,
+  validateResumeFile,
+  validateResumeFileContent,
+  type SniffedResumeContentType
+} from "./validation";
 export type {
   ResumeDocumentMetadata,
   ResumeIngestionInput,

@@ -9,6 +9,12 @@ import {
   resolveCandidateRouteContext
 } from "@/features/candidate-persistence/supabase-candidate-context";
 import { readCandidateProgress } from "@/features/candidate-persistence/supabase-candidate-store";
+import {
+  clientIpFromHeaders,
+  enforceRateLimit,
+  readRateLimitFromEnv,
+  resolveRateLimitStore
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -20,6 +26,31 @@ export async function POST(request: NextRequest) {
   });
   if (isCandidateContextError(candidateContext)) {
     return tokenError(candidateContext.code, candidateContext.message, candidateContext.status);
+  }
+
+  const rate = await enforceRateLimit({
+    store: resolveRateLimitStore(),
+    rule: {
+      bucket: "deepgram_token",
+      limit: readRateLimitFromEnv(process.env.RATE_LIMIT_DEEPGRAM_TOKEN_PER_HOUR, 10),
+      windowSeconds: 3600
+    },
+    subjects: [
+      `user:${candidateContext.candidateId}`,
+      `ip:${clientIpFromHeaders(request.headers)}`
+    ]
+  });
+  if (!rate.allowed) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "rate_limited",
+          message: "Too many transcription token requests. Wait before retrying.",
+          status: 429
+        }
+      },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } }
+    );
   }
 
   const progress = await readCandidateProgress(candidateContext);

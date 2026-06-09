@@ -1,13 +1,14 @@
 import type { ResumeUploadConfig } from "./types";
 
-const DEFAULT_ALLOWED_EXTENSIONS = [".pdf", ".html", ".htm", ".json", ".txt"];
+const DEFAULT_ALLOWED_EXTENSIONS = [".pdf", ".docx", ".html", ".htm", ".json", ".txt"];
 const DEFAULT_ALLOWED_MIME_TYPES = [
   "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/json",
   "text/html",
   "text/plain"
 ];
-const DEFAULT_MAX_FILE_BYTES = 10 * 1024 * 1024;
+const DEFAULT_MAX_FILE_BYTES = 8 * 1024 * 1024;
 const DEFAULT_RAW_CV_RETENTION_DAYS = 30;
 
 type ConfigEnv = Partial<Record<string, string | undefined>>;

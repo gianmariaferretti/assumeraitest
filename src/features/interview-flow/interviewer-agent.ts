@@ -5,6 +5,7 @@ import {
 } from "./interview-language";
 import type { FunnelDecision, FunnelState } from "./funnel-state-machine";
 import type { BarsCompetency, FunnelPhase } from "../scoring/bars/types";
+import { recordLlmUsage, type LlmUsageRecorder } from "../../lib/llm-budget/core";
 
 /**
  * Interviewer Agent — Function 2.
@@ -81,6 +82,8 @@ export interface InterviewerAgentOptions {
   readonly maxTokens?: number;
   readonly model?: string;
   readonly temperature?: number;
+  /** Usage hook for the daily LLM budget; defaults to the global recorder. */
+  readonly recordUsage?: LlmUsageRecorder;
 }
 
 export type InterviewerTurnSource = "anthropic" | "deterministic_fallback";
@@ -100,6 +103,10 @@ interface AnthropicTextBlock {
 
 interface AnthropicMessageResponse {
   readonly content?: readonly AnthropicTextBlock[];
+  readonly usage?: {
+    readonly input_tokens?: number;
+    readonly output_tokens?: number;
+  };
 }
 
 class InterviewerSafetyError extends Error {
@@ -167,6 +174,11 @@ export async function generateInterviewerTurn(
       }
 
       const message = (await response.json()) as AnthropicMessageResponse;
+      (input.options?.recordUsage ?? recordLlmUsage)({
+        model,
+        inputTokens: message.usage?.input_tokens ?? 0,
+        outputTokens: message.usage?.output_tokens ?? 0,
+      });
       const text = sanitizeTurnText(extractTextContent(message));
       return {
         text,
