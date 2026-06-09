@@ -69,14 +69,32 @@ Supporting pieces:
 | Table | Migration | Purpose |
 |-------|-----------|---------|
 | `company_roles.module_plan` | `20260603100000_role_module_plan.sql` | The three-list job profile |
-| `candidate_module_sessions` | `20260603110000_candidate_module_sessions.sql` | Async per-module Session Store (owner-only RLS) |
+| `candidate_module_sessions` | `20260603110000_candidate_module_sessions.sql` + `20260609100000_server_authoritative_interview_turns.sql` | Async per-module Session Store — single source of truth; owner read-only, service-role write only |
+| `candidate_interview_turns` | `20260609100000_server_authoritative_interview_turns.sql` | Server-issued turn ledger with anti-replay unique constraint (service-role write only) |
 | `interview_evaluator_runs` | `20260603090000_interview_evaluator_and_outcomes.sql` | Audit log of every BARS evaluation (service-role write only) |
 | `hire_outcomes` | `20260603090000_interview_evaluator_and_outcomes.sql` | Manager ratings at 3/6/12 months for predictive validity |
 
-## Routes
+## Routes (server-authoritative trust model)
 
-- `POST /candidate/interview/turn` — run one turn for the active module.
-- `POST /candidate/interview/module/[moduleId]/start` — open a module sub-session.
+Interview state lives in `candidate_module_sessions`; the client never submits
+session state. A request that includes session/state fields is rejected with
+400 `client_state_rejected`.
+
+- `POST /candidate/interview/turn` — body is exactly
+  `{ moduleId, turnId, candidateAnswer: { answerText } }`. The server derives
+  the planned question, competency (`module-competencies.ts`), funnel phase,
+  and elapsed time (`turn_started_at` → now, clamped) from persisted state.
+  `turnId` is generated server-side when a question is issued; replaying an
+  evaluated turn returns 409. Hard caps (max turns per module, max total
+  duration from the module plan) close the module gracefully.
+- `POST /candidate/interview/module/[moduleId]/start` — opens/resumes a module
+  from persisted state and returns the pending server-issued turn (idempotent
+  across disconnects).
+- `POST /candidate/interview/session-snapshot` — persists the server-derived
+  aggregate snapshot; the client may only contribute the presentation-layer
+  `providerSession`.
+- `POST /candidate/interview/session/reset` — starts the interview over with a
+  fresh server session built from the current primary question plan.
 
 ## Voice (optional)
 

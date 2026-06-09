@@ -7,6 +7,11 @@ import {
   resolveCandidateRouteContext
 } from "@/features/candidate-persistence/supabase-candidate-context";
 import {
+  createServerInterviewSession,
+  loadServerInterviewState,
+  resolveServerInterviewStore
+} from "@/features/candidate-persistence/server-interview-store";
+import {
   readCandidateProgress,
   readResumePipelineSession
 } from "@/features/candidate-persistence/supabase-candidate-store";
@@ -85,36 +90,54 @@ export default async function CandidateInterviewPage() {
   const candidateProfile = profileReview?.profile.confirmed_by_candidate
     ? profileReview.profile
     : undefined;
-  const resumeScorecard = createResumeScorecard(candidateProfile);
-  const questionPlan = candidateProfile
-    ? await createClaudeResumeAwareQuestionPlan({
-        questions: selectQuestionBankForRole(
-          candidateInterviewPreviewRole,
-          undefined,
-          interviewLanguage
-        ),
-        roleProfile: candidateInterviewPreviewRole,
-        candidateProfile,
-        interviewLanguage,
-        resumeScorecard
-      })
-    : undefined;
+
+  // Server-authoritative session: reuse the persisted in-progress session, or
+  // create one (running the question planner exactly once per session). The
+  // client only ever receives a read-only view of this state.
+  const store = resolveServerInterviewStore(candidateContext);
+  const existingState = await loadServerInterviewState(store, candidateContext.candidateId);
+  let serverSession =
+    existingState && existingState.session.interviewLanguage === interviewLanguage
+      ? existingState.session
+      : undefined;
+  let questionPlanAudit;
+  if (!serverSession) {
+    const resumeScorecard = createResumeScorecard(candidateProfile);
+    const questionPlan = candidateProfile
+      ? await createClaudeResumeAwareQuestionPlan({
+          questions: selectQuestionBankForRole(
+            candidateInterviewPreviewRole,
+            undefined,
+            interviewLanguage
+          ),
+          roleProfile: candidateInterviewPreviewRole,
+          candidateProfile,
+          interviewLanguage,
+          resumeScorecard
+        })
+      : undefined;
+    const created = await createServerInterviewSession(store, candidateContext.candidateId, {
+      roleProfile: candidateInterviewPreviewRole,
+      interviewLanguage,
+      candidateProfile,
+      questionBank: questionPlan?.questions
+    });
+    serverSession = created.session;
+    questionPlanAudit = questionPlan
+      ? {
+          source: questionPlan.source,
+          providerModel: questionPlan.providerModel,
+          fallbackReason: questionPlan.fallbackReason,
+          generatedAt: new Date().toISOString()
+        }
+      : undefined;
+  }
 
   return (
     <InterviewSessionClient
-      initialCandidateProfile={candidateProfile}
+      initialSession={serverSession}
       initialInterviewLanguage={interviewLanguage}
-      initialQuestionBank={questionPlan?.questions}
-      initialQuestionPlanAudit={
-        questionPlan
-          ? {
-              source: questionPlan.source,
-              providerModel: questionPlan.providerModel,
-              fallbackReason: questionPlan.fallbackReason,
-              generatedAt: new Date().toISOString()
-            }
-          : undefined
-      }
+      initialQuestionPlanAudit={questionPlanAudit}
     />
   );
 }

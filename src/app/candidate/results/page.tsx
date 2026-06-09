@@ -10,6 +10,10 @@ import {
   isCandidateContextError,
   resolveCandidateRouteContext
 } from "@/features/candidate-persistence/supabase-candidate-context";
+import {
+  loadServerInterviewState,
+  resolveServerInterviewStore
+} from "@/features/candidate-persistence/server-interview-store";
 import { readCandidateProgress } from "@/features/candidate-persistence/supabase-candidate-store";
 
 export const metadata = {
@@ -51,5 +55,13 @@ export default async function CandidateResultsPage() {
     redirect("/candidate/interview?error=interview_required");
   }
 
-  return <CandidateResultsReview language={activeInterviewLanguage} />;
+  const store = resolveServerInterviewStore(candidateContext);
+  const serverState = await loadServerInterviewState(store, candidateContext.candidateId);
+
+  return (
+    <CandidateResultsReview
+      language={activeInterviewLanguage}
+      initialInterviewSession={serverState?.session ?? null}
+    />
+  );
 }

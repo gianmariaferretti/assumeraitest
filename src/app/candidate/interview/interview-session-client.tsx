@@ -5,15 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CandidateProgressRail } from "@/components/candidate/CandidateProgressRail";
 import {
-  createInterviewSession,
   currentQuestion,
-  deriveResponseAnalysisFlags,
-  recordInterviewResponse,
-  resumeInterviewSession,
-  serializeInterviewSession,
   type CandidateInterviewLanguageCode,
   type InterviewQuestion,
-  type ResponseAnalysisFlags,
   type InterviewSession
 } from "@/features/interview-flow";
 import {
@@ -33,14 +27,11 @@ import {
   syncLiveInterviewProviderWithQuestion,
   type LiveInterviewProviderSession
 } from "@/features/live-interview";
-import type { CandidateProfile } from "@/features/resume-parsing";
 
 import { CandidateViewfinder } from "./CandidateViewfinder";
 import { InterviewFocusStyles } from "./InterviewFocusStyles";
 import { VoiceTranscriptionControl } from "./VoiceTranscriptionControl";
-import { candidateInterviewPreviewRole } from "./interview-preview-role";
 
-const STORAGE_KEY = "assumerai:candidate-interview-session:v0";
 const PROVIDER_STORAGE_KEY = "assumerai:live-interview-provider-session:v0";
 const QUESTION_PREPARATION_SECONDS = 10;
 
@@ -77,7 +68,6 @@ type TimedOutResponseState = {
 
 type SaveCapturedAnswerOptions = {
   readonly answerTextOverride?: string;
-  readonly analysisFlagsOverride?: ResponseAnalysisFlags;
   readonly skipTransition?: boolean;
 };
 
@@ -88,96 +78,53 @@ type QuestionPlanAudit = {
   readonly generatedAt: string;
 };
 
-interface CreateLocalSessionOptions {
-  readonly candidateProfile?: CandidateProfile;
-  readonly interviewLanguage: CandidateInterviewLanguageCode;
-  readonly questionBank?: InterviewQuestion[];
-}
+/**
+ * Server-issued turn ticket. The client never decides which question is asked;
+ * it can only answer the turn the server issued.
+ */
+type ActiveTurn = {
+  readonly turnId: string;
+  readonly moduleId: string;
+  readonly questionId: string;
+  readonly questionText: string;
+  readonly issuedAt: string;
+};
 
 interface InterviewSessionClientProps {
-  readonly initialCandidateProfile?: CandidateProfile;
+  readonly initialSession: InterviewSession;
   readonly initialInterviewLanguage: CandidateInterviewLanguageCode;
-  readonly initialQuestionBank?: InterviewQuestion[];
   readonly initialQuestionPlanAudit?: QuestionPlanAudit;
 }
 
-function createLocalSession(options: CreateLocalSessionOptions): InterviewSession {
-  return createInterviewSession({
-    candidateId: options.candidateProfile?.candidate_id ?? "candidate_local",
-    interviewLanguage: options.interviewLanguage,
-    roleProfile: candidateInterviewPreviewRole,
-    candidateProfile: options.questionBank ? undefined : options.candidateProfile,
-    questionBank: options.questionBank,
-    sessionId: `interview_session_local_${Date.now().toString(36)}`
-  });
-}
-
-function savedSessionMatchesInitialQuestions(
-  savedSession: InterviewSession,
-  initialSession: InterviewSession
-): boolean {
+function activeModuleIdFor(session: InterviewSession): string | null {
+  const planOrder = session.modulePlan
+    .map((module) => module.id)
+    .filter((id) => id in session.module_sessions);
+  const order = planOrder.length > 0 ? planOrder : Object.keys(session.module_sessions);
   return (
-    savedSession.candidateId === initialSession.candidateId &&
-    savedSession.roleId === initialSession.roleId &&
-    savedSession.interviewLanguage === initialSession.interviewLanguage &&
-    savedSession.questions.length === initialSession.questions.length &&
-    savedSession.questions.every((question, index) => {
-      const initialQuestion = initialSession.questions[index];
-      return question.id === initialQuestion?.id && question.prompt === initialQuestion.prompt;
-    })
+    order.find((id) => {
+      const moduleSession = session.module_sessions[id];
+      return moduleSession.state !== "completed" && moduleSession.state !== "skipped";
+    }) ?? null
   );
 }
 
-async function persistInterviewSnapshotToServer(payload: {
-  readonly session: InterviewSession;
-  readonly providerSession: LiveInterviewProviderSession;
-  readonly questionPlan: Record<string, unknown>;
-}): Promise<void> {
+async function persistProviderSnapshotToServer(
+  providerSession: LiveInterviewProviderSession
+): Promise<void> {
   try {
+    // The server derives the interview session from its own persisted state;
+    // the client only contributes the presentation-layer provider session.
     await fetch("/candidate/interview/session-snapshot", {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ providerSession })
     });
   } catch {
-    // Local browser autosave remains the immediate recovery path if the network drops.
-  }
-}
-
-function clearSavedInterviewFromDevice(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.removeItem(STORAGE_KEY);
-  window.localStorage.removeItem(PROVIDER_STORAGE_KEY);
-  clearInterviewCompletedOnDevice();
-}
-
-function loadSavedSession(initialSession: InterviewSession): InterviewSession | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const saved = window.localStorage.getItem(STORAGE_KEY);
-  if (!saved) {
-    return null;
-  }
-
-  try {
-    const savedSession = resumeInterviewSession(saved);
-    if (!savedSessionMatchesInitialQuestions(savedSession, initialSession)) {
-      clearSavedInterviewFromDevice();
-      return null;
-    }
-
-    return savedSession;
-  } catch {
-    clearSavedInterviewFromDevice();
-    throw new Error("Saved interview could not be restored, so it was cleared.");
+    // Local provider autosave remains the immediate recovery path if the network drops.
   }
 }
 
@@ -250,23 +197,15 @@ function createQuestionTransition(
 }
 
 export function InterviewSessionClient({
-  initialCandidateProfile,
+  initialSession,
   initialInterviewLanguage,
-  initialQuestionBank,
   initialQuestionPlanAudit
 }: InterviewSessionClientProps) {
   const copy = resolveCandidateFlowCopy(initialInterviewLanguage).interview;
+  void initialQuestionPlanAudit;
   const snapshotPersistenceTimerRef = useRef<number | null>(null);
-  const sessionOptions = useMemo(
-    () => ({
-      candidateProfile: initialCandidateProfile,
-      interviewLanguage: initialInterviewLanguage,
-      questionBank: initialQuestionBank
-    }),
-    [initialCandidateProfile, initialInterviewLanguage, initialQuestionBank]
-  );
-  const initialSession = useMemo(() => createLocalSession(sessionOptions), [sessionOptions]);
   const [session, setSession] = useState<InterviewSession>(initialSession);
+  const [activeTurn, setActiveTurn] = useState<ActiveTurn | null>(null);
   const [providerSession, setProviderSession] = useState<LiveInterviewProviderSession>(() =>
     createProviderFor(initialSession)
   );
@@ -274,6 +213,7 @@ export function InterviewSessionClient({
   const [error, setError] = useState("");
   const [isVoiceCaptureActive, setIsVoiceCaptureActive] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [transition, setTransition] = useState<QuestionTransition | null>(null);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
@@ -325,33 +265,72 @@ export function InterviewSessionClient({
     capturedTranscript.trim().length === 0;
   const canSaveAnswer =
     Boolean(question) &&
+    Boolean(activeTurn) &&
     !answerIsLocked &&
     !isVoiceCaptureActive &&
+    !isSubmitting &&
     !responseWindowExpired &&
     capturedTranscript.trim().length > 0 &&
     !transition &&
     !isPreparingQuestion;
 
-  useEffect(() => {
-    try {
-      const saved = loadSavedSession(initialSession);
-      if (saved) {
-        setSession(saved);
-        setProviderSession(loadSavedProviderSession(saved.sessionId) ?? createProviderFor(saved));
-        setLastSavedAt(saved.updatedAt);
-        if (saved.status === "completed") {
-          markInterviewCompletedOnDevice();
-        } else {
-          clearInterviewCompletedOnDevice();
-        }
-      } else {
-        clearInterviewCompletedOnDevice();
+  /**
+   * Ask the server to open (or resume) the active module and hand back the
+   * server-issued turn. State always flows server -> client; the client never
+   * posts session state.
+   */
+  const syncActiveTurn = useCallback(
+    async (targetSession: InterviewSession): Promise<boolean> => {
+      const moduleId = activeModuleIdFor(targetSession);
+      if (!moduleId) {
+        setActiveTurn(null);
+        return false;
       }
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : copy.restoreFailed);
+
+      try {
+        const response = await fetch(`/candidate/interview/module/${moduleId}/start`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({})
+        });
+        const data = (await response.json().catch(() => null)) as {
+          readonly session?: InterviewSession;
+          readonly turn?: ActiveTurn | null;
+          readonly error?: { readonly message?: string };
+        } | null;
+        if (!response.ok || !data?.session) {
+          setError(data?.error?.message ?? copy.restoreFailed);
+          return false;
+        }
+
+        setSession(data.session);
+        setActiveTurn(data.turn ?? null);
+        setLastSavedAt(data.session.updatedAt);
+        return true;
+      } catch {
+        setError(copy.restoreFailed);
+        return false;
+      }
+    },
+    [copy.restoreFailed]
+  );
+
+  useEffect(() => {
+    const savedProvider = loadSavedProviderSession(initialSession.sessionId);
+    if (savedProvider) {
+      setProviderSession(savedProvider);
+    }
+    if (initialSession.status === "completed") {
+      markInterviewCompletedOnDevice();
+    } else {
+      clearInterviewCompletedOnDevice();
+      void syncActiveTurn(initialSession);
     }
     setIsHydrated(true);
-  }, [copy.restoreFailed, initialSession]);
+  }, [initialSession, syncActiveTurn]);
 
   useEffect(() => {
     return () => {
@@ -364,28 +343,18 @@ export function InterviewSessionClient({
   useEffect(() => {
     if (isHydrated && typeof window !== "undefined") {
       try {
-        window.localStorage.setItem(STORAGE_KEY, serializeInterviewSession(session));
         window.localStorage.setItem(PROVIDER_STORAGE_KEY, JSON.stringify(providerSession));
-        setLastSavedAt(new Date().toISOString());
         if (snapshotPersistenceTimerRef.current !== null) {
           window.clearTimeout(snapshotPersistenceTimerRef.current);
         }
         snapshotPersistenceTimerRef.current = window.setTimeout(() => {
-          void persistInterviewSnapshotToServer({
-            session,
-            providerSession,
-            questionPlan: {
-              ...(initialQuestionPlanAudit ?? { source: "client_snapshot" }),
-              interviewLanguage: session.interviewLanguage,
-              questions: session.questions
-            }
-          });
+          void persistProviderSnapshotToServer(providerSession);
         }, 350);
       } catch {
         setError(copy.autosaveFailed);
       }
     }
-  }, [copy.autosaveFailed, initialQuestionPlanAudit, isHydrated, providerSession, session]);
+  }, [copy.autosaveFailed, isHydrated, providerSession]);
 
   useEffect(() => {
     if (!currentQuestionId || transition || shellState.completion.isComplete) {
@@ -492,92 +461,144 @@ export function InterviewSessionClient({
     providerSession.status
   ]);
 
-  const saveCapturedAnswer = useCallback((options: SaveCapturedAnswerOptions = {}) => {
-    if (!question) {
-      return false;
-    }
+  const saveCapturedAnswer = useCallback(
+    async (options: SaveCapturedAnswerOptions = {}): Promise<boolean> => {
+      if (!question || isSubmitting) {
+        return false;
+      }
 
-    if (providerSession.status === "paused") {
-      setError(copy.resumeBeforeSaving);
-      return false;
-    }
+      if (providerSession.status === "paused") {
+        setError(copy.resumeBeforeSaving);
+        return false;
+      }
 
-    if (isTerminalProviderStatus(providerSession.status)) {
-      setError(copy.endedReviewOrRestart);
-      return false;
-    }
+      if (isTerminalProviderStatus(providerSession.status)) {
+        setError(copy.endedReviewOrRestart);
+        return false;
+      }
 
-    if (new Date() > new Date(providerSession.expiresAt)) {
-      expireCurrentProviderSession(copy.timedOut);
-      return false;
-    }
+      if (new Date() > new Date(providerSession.expiresAt)) {
+        expireCurrentProviderSession(copy.timedOut);
+        return false;
+      }
 
-    if (providerSession.transcriptEvents.length >= providerSession.caps.maxTranscriptEvents) {
-      setProviderSession((current) => ({
-        ...current,
-        status: "expired",
-        updatedAt: new Date().toISOString(),
-        endedAt: new Date().toISOString(),
-        endReason: "transcript_event_cap_reached",
-        billingStoppedAt: new Date().toISOString()
-      }));
-      setError(copy.transcriptLimit);
-      return false;
-    }
+      if (providerSession.transcriptEvents.length >= providerSession.caps.maxTranscriptEvents) {
+        setProviderSession((current) => ({
+          ...current,
+          status: "expired",
+          updatedAt: new Date().toISOString(),
+          endedAt: new Date().toISOString(),
+          endReason: "transcript_event_cap_reached",
+          billingStoppedAt: new Date().toISOString()
+        }));
+        setError(copy.transcriptLimit);
+        return false;
+      }
 
-    try {
       const answerText = (options.answerTextOverride ?? capturedTranscript).trim();
       if (!answerText) {
         setError(copy.transcriptNotReady);
         return false;
       }
 
-      const answeredAt = new Date().toISOString();
-      const updated = recordInterviewResponse(session, {
-        questionId: question.id,
-        answerText,
-        answeredAt,
-        analysisFlags: options.analysisFlagsOverride ?? deriveResponseAnalysisFlags(answerText)
-      });
-      if (updated.status === "completed") {
-        markInterviewCompletedOnDevice();
+      if (!activeTurn) {
+        // No server-issued turn (e.g. after a disconnect): resync, then ask the
+        // candidate to save again against the reissued turn.
+        await syncActiveTurn(session);
+        setError(copy.answerCouldNotSave);
+        return false;
       }
 
-      setSession(updated);
-      setProviderSession((current) => {
-        const withCandidateTranscript = appendLiveTranscriptEvent(current, {
-          speaker: "candidate",
-          kind: "answer",
-          text: answerText,
-          questionId: question.id,
-          at: answeredAt
+      setIsSubmitting(true);
+      try {
+        const response = await fetch("/candidate/interview/turn", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            moduleId: activeTurn.moduleId,
+            turnId: activeTurn.turnId,
+            candidateAnswer: { answerText }
+          })
         });
-        return updated.status === "completed"
-          ? syncLiveInterviewProviderWithQuestion(withCandidateTranscript, updated, answeredAt)
-          : withCandidateTranscript;
-      });
-      setCapturedTranscript("");
-      setIsVoiceCaptureActive(false);
-      setTimedOutResponse(null);
-      setResponseTimeRemainingLabel(null);
-      setResponseAttempt(1);
-      setTransition(
-        options.skipTransition ? null : createQuestionTransition(currentQuestion(updated), copy)
-      );
-      setError("");
-      return true;
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : copy.answerCouldNotSave);
-      return false;
-    }
-  }, [
-    capturedTranscript,
-    copy,
-    expireCurrentProviderSession,
-    providerSession,
-    question,
-    session
-  ]);
+        const data = (await response.json().catch(() => null)) as {
+          readonly session?: InterviewSession;
+          readonly interviewerText?: string;
+          readonly nextTurn?: ActiveTurn | null;
+          readonly error?: { readonly message?: string };
+        } | null;
+
+        if (!response.ok || !data?.session) {
+          if (response.status === 409) {
+            // Stale or already-evaluated turn: resync to the server's view.
+            await syncActiveTurn(session);
+          }
+          setError(data?.error?.message ?? copy.answerCouldNotSave);
+          return false;
+        }
+
+        const updated = data.session;
+        const answeredAt = new Date().toISOString();
+        if (updated.status === "completed") {
+          markInterviewCompletedOnDevice();
+        }
+
+        setSession(updated);
+        setActiveTurn(data.nextTurn ?? null);
+        setLastSavedAt(updated.updatedAt);
+        setProviderSession((current) => {
+          let next = appendLiveTranscriptEvent(current, {
+            speaker: "candidate",
+            kind: "answer",
+            text: answerText,
+            questionId: activeTurn.questionId,
+            at: answeredAt
+          });
+          const interviewerText = data.interviewerText?.trim();
+          if (interviewerText) {
+            next = appendLiveTranscriptEvent(next, {
+              speaker: "interviewer",
+              kind: "system_note",
+              text: interviewerText,
+              questionId: activeTurn.questionId,
+              at: answeredAt
+            });
+          }
+          return updated.status === "completed"
+            ? syncLiveInterviewProviderWithQuestion(next, updated, answeredAt)
+            : next;
+        });
+        setCapturedTranscript("");
+        setIsVoiceCaptureActive(false);
+        setTimedOutResponse(null);
+        setResponseTimeRemainingLabel(null);
+        setResponseAttempt(1);
+        setTransition(
+          options.skipTransition ? null : createQuestionTransition(currentQuestion(updated), copy)
+        );
+        setError("");
+        return true;
+      } catch {
+        setError(copy.answerCouldNotSave);
+        return false;
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [
+      activeTurn,
+      capturedTranscript,
+      copy,
+      expireCurrentProviderSession,
+      isSubmitting,
+      providerSession,
+      question,
+      session,
+      syncActiveTurn
+    ]
+  );
 
   const handleResponseTimeExpired = useCallback((transcript: string) => {
     if (!currentQuestionId) {
@@ -601,9 +622,8 @@ export function InterviewSessionClient({
       return;
     }
 
-    saveCapturedAnswer({
+    void saveCapturedAnswer({
       answerTextOverride: createTimedOutResponseText(timedOutResponse.transcript),
-      analysisFlagsOverride: {},
       skipTransition: true
     });
   }, [saveCapturedAnswer, timedOutResponse]);
@@ -649,25 +669,19 @@ export function InterviewSessionClient({
   }, [continueAfterTimeout, question, responseWindowExpired, timedOutResponse]);
 
   function resumeSavedSession() {
-    try {
-      const saved = loadSavedSession(initialSession);
-      if (!saved) {
-        setError(copy.savedNotFound);
-        return;
+    // Resume = resync with the server-authoritative session and its pending
+    // turn; the locally saved provider session (transcript shell) is restored
+    // separately on mount.
+    void syncActiveTurn(session).then((synced) => {
+      if (synced) {
+        setCapturedTranscript("");
+        setIsVoiceCaptureActive(false);
+        setTimedOutResponse(null);
+        setResponseAttempt(1);
+        setTransition(null);
+        setError("");
       }
-
-      setSession(saved);
-      setProviderSession(loadSavedProviderSession(saved.sessionId) ?? createProviderFor(saved));
-      setCapturedTranscript("");
-      setIsVoiceCaptureActive(false);
-      setTimedOutResponse(null);
-      setResponseAttempt(1);
-      setTransition(null);
-      setError("");
-      setLastSavedAt(saved.updatedAt);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : copy.restoreFailed);
-    }
+    });
   }
 
   function resetSession() {
@@ -678,25 +692,45 @@ export function InterviewSessionClient({
       return;
     }
 
-    const freshSession = createLocalSession(sessionOptions);
-    setSession(freshSession);
-    setProviderSession(createProviderFor(freshSession));
-    setCapturedTranscript("");
-    setIsVoiceCaptureActive(false);
-    setTimedOutResponse(null);
-    setResponseTimeRemainingLabel(null);
-    setResponseAttempt(1);
-    setUsedSecondChancesByQuestion({});
-    setPreparationQuestionId(freshSession.currentQuestionId || null);
-    setPreparationRemaining(QUESTION_PREPARATION_SECONDS);
-    setTransition(null);
-    setError("");
-    setLastSavedAt(null);
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(STORAGE_KEY);
-      window.localStorage.removeItem(PROVIDER_STORAGE_KEY);
-    }
-    clearInterviewCompletedOnDevice();
+    void (async () => {
+      try {
+        const response = await fetch("/candidate/interview/session/reset", {
+          method: "POST",
+          headers: { Accept: "application/json" }
+        });
+        const data = (await response.json().catch(() => null)) as {
+          readonly session?: InterviewSession;
+          readonly error?: { readonly message?: string };
+        } | null;
+        if (!response.ok || !data?.session) {
+          setError(data?.error?.message ?? copy.restoreFailed);
+          return;
+        }
+
+        const freshSession = data.session;
+        setSession(freshSession);
+        setActiveTurn(null);
+        setProviderSession(createProviderFor(freshSession));
+        setCapturedTranscript("");
+        setIsVoiceCaptureActive(false);
+        setTimedOutResponse(null);
+        setResponseTimeRemainingLabel(null);
+        setResponseAttempt(1);
+        setUsedSecondChancesByQuestion({});
+        setPreparationQuestionId(freshSession.currentQuestionId || null);
+        setPreparationRemaining(QUESTION_PREPARATION_SECONDS);
+        setTransition(null);
+        setError("");
+        setLastSavedAt(null);
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(PROVIDER_STORAGE_KEY);
+        }
+        clearInterviewCompletedOnDevice();
+        void syncActiveTurn(freshSession);
+      } catch {
+        setError(copy.restoreFailed);
+      }
+    })();
   }
 
   function captureTranscribedAnswer(transcript: string) {
@@ -816,7 +850,7 @@ export function InterviewSessionClient({
                 <div className="candidate-control-row candidate-control-row--primary">
                   <button
                     disabled={!canSaveAnswer}
-                    onClick={() => saveCapturedAnswer()}
+                    onClick={() => void saveCapturedAnswer()}
                     type="button"
                     className="submit-answer-btn"
                   >

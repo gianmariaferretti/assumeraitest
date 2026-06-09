@@ -44,18 +44,20 @@ function records(dimension, value, applied, advanced) {
 
 const decisions = [
   ...records("role_family", "A", 60, 18), // 30% (reference)
-  ...records("role_family", "B", 40, 10), // 25% -> ratio 0.833 -> pass
+  ...records("role_family", "B", 40, 10), // 25% -> ratio 0.833 -> warn band (0.80-0.90)
   ...records("role_family", "C", 20, 3), //  15% -> ratio 0.5 -> fail
   ...records("seniority", "lead", 3, 1), //  n<5 -> warn
 ];
 
-test("a cohort at 25% vs a 30% reference passes the four-fifths rule", () => {
+test("a cohort at 25% vs a 30% reference clears four-fifths but sits in the warn band", () => {
+  // Documented spec (docs/fairness/adverse-impact-latest.md):
+  // 0.80 <= ratio < 0.90 -> warn (early-warning margin above the legal floor).
   const { rows } = computeAdverseImpact(decisions);
   const b = rows.find((row) => row.cohortDimension === "role_family" && row.cohortValue === "B");
   assert.ok(b);
   assert.equal(b.referenceValue, "A");
   assert.ok(Math.abs(b.ratioVsReference - 0.8333) < 0.01);
-  assert.equal(b.status, "pass");
+  assert.equal(b.status, "warn");
 });
 
 test("a cohort at 15% vs a 30% reference fails the four-fifths rule", () => {

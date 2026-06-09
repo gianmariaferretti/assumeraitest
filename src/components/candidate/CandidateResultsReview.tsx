@@ -29,12 +29,17 @@ type ReviewRequestState = {
 };
 
 export function CandidateResultsReview({
-  language
+  language,
+  initialInterviewSession
 }: {
   readonly language?: CandidateInterviewLanguageCode;
+  /** Server-authoritative session passed down from the results page. */
+  readonly initialInterviewSession?: InterviewSession | null;
 }) {
   const copy = resolveCandidateFlowCopy(language).results;
-  const [interviewSession, setInterviewSession] = useState<InterviewSession | null>(null);
+  const [interviewSession, setInterviewSession] = useState<InterviewSession | null>(
+    initialInterviewSession ?? null
+  );
   const baseModel = useMemo(
     () => buildCandidateResultsReviewModel(undefined, { interviewSession }),
     [interviewSession]
@@ -48,6 +53,13 @@ export function CandidateResultsReview({
   const [isRequestingReview, setIsRequestingReview] = useState(false);
 
   useEffect(() => {
+    // The server-authoritative session wins; the legacy device autosave is only
+    // a candidate-private display fallback for sessions saved before the
+    // server-trust migration (never used for scoring).
+    if (initialInterviewSession) {
+      return;
+    }
+
     const savedSession =
       typeof window === "undefined"
         ? null
@@ -62,7 +74,7 @@ export function CandidateResultsReview({
     } catch {
       window.localStorage.removeItem(INTERVIEW_SESSION_STORAGE_KEY);
     }
-  }, []);
+  }, [initialInterviewSession]);
 
   async function requestHumanReview() {
     setIsRequestingReview(true);

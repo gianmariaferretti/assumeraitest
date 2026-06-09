@@ -33,7 +33,8 @@ test("createInterviewSession localizes supplied base question banks without resu
   );
 });
 
-test("saved interview sessions are only restored for the active interview language", () => {
+test("interview sessions resume from server state for the active interview language", () => {
+  const pageSource = read("src", "app", "candidate", "interview", "page.tsx");
   const clientSource = read(
     "src",
     "app",
@@ -42,8 +43,13 @@ test("saved interview sessions are only restored for the active interview langua
     "interview-session-client.tsx"
   );
 
+  // The server reuses a persisted session only while its language matches; a
+  // language switch starts a fresh server session with the new question plan.
   assert.match(
-    clientSource,
-    /savedSession\.interviewLanguage === initialSession\.interviewLanguage/
+    pageSource,
+    /existingState\.session\.interviewLanguage === interviewLanguage/
   );
+  // The client never restores or submits interview session state on its own.
+  assert.doesNotMatch(clientSource, /localStorage\.(getItem|setItem)\(STORAGE_KEY/);
+  assert.doesNotMatch(clientSource, /resumeInterviewSession/);
 });

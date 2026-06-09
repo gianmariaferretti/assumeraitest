@@ -1,47 +1,9 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
-import vm from "node:vm";
 
-import ts from "typescript";
+import { loadFromRepoRoot } from "../../test-helpers/ts-loader.mjs";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.resolve(__dirname, "../../..");
-const cache = new Map();
-
-function load(absPath) {
-  if (cache.has(absPath)) return cache.get(absPath);
-  const source = readFileSync(absPath, "utf8");
-  const output = ts.transpileModule(source, {
-    compilerOptions: {
-      esModuleInterop: true,
-      module: ts.ModuleKind.CommonJS,
-      target: ts.ScriptTarget.ES2022,
-    },
-    fileName: absPath,
-  }).outputText;
-  const mod = { exports: {} };
-  cache.set(absPath, mod.exports);
-  const dir = path.dirname(absPath);
-  const requireShim = (req) => {
-    let target = path.resolve(dir, req);
-    if (!target.endsWith(".ts")) target += ".ts";
-    return load(target);
-  };
-  vm.runInNewContext(
-    output,
-    { exports: mod.exports, module: mod, require: requireShim, process, console },
-    { filename: absPath },
-  );
-  cache.set(absPath, mod.exports);
-  return mod.exports;
-}
-
-const { createCompanyMatch } = load(
-  path.join(rootDir, "src/features/matching/matching-engine.ts"),
-);
+const { createCompanyMatch } = loadFromRepoRoot("src/features/matching/matching-engine.ts");
 
 const candidate = {
   candidate_id: "cand_1",
