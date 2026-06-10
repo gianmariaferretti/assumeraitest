@@ -14,7 +14,10 @@ import {
   loadServerInterviewState,
   resolveServerInterviewStore
 } from "@/features/candidate-persistence/server-interview-store";
-import { readCandidateProgress } from "@/features/candidate-persistence/supabase-candidate-store";
+import {
+  readCandidateHumanReviewRequests,
+  readCandidateProgress
+} from "@/features/candidate-persistence/supabase-candidate-store";
 
 export const metadata = {
   title: "Candidate Results | AssumerAI",
@@ -56,12 +59,16 @@ export default async function CandidateResultsPage() {
   }
 
   const store = resolveServerInterviewStore(candidateContext);
-  const serverState = await loadServerInterviewState(store, candidateContext.candidateId);
+  const [serverState, reviewRequests] = await Promise.all([
+    loadServerInterviewState(store, candidateContext.candidateId),
+    readCandidateHumanReviewRequests(candidateContext)
+  ]);
 
   return (
     <CandidateResultsReview
       language={activeInterviewLanguage}
       initialInterviewSession={serverState?.session ?? null}
+      initialReviewRequests={reviewRequests}
     />
   );
 }
