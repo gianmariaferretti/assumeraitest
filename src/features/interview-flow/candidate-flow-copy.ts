@@ -298,6 +298,11 @@ export type CandidateFlowCopy = {
     readonly scoreExplanationAria: string;
     readonly heroTitle: string;
     readonly reviewRequested: string;
+    readonly reviewStatusTitle: string;
+    readonly reviewStatusOpen: string;
+    readonly reviewStatusUpheld: string;
+    readonly reviewStatusAdjusted: string;
+    readonly reviewOutcomeReason: string;
     readonly requesting: string;
     readonly queued: string;
     readonly reviewCreateError: string;
@@ -772,6 +777,11 @@ const en: CandidateFlowCopy = {
     scoreExplanationAria: "Score explanation",
     heroTitle: "This is still human-reviewed and candidate-controlled.",
     reviewRequested: "Review requested",
+    reviewStatusTitle: "Your human review requests",
+    reviewStatusOpen: "Awaiting human review",
+    reviewStatusUpheld: "Reviewed: original evaluation upheld",
+    reviewStatusAdjusted: "Reviewed: adjusted with documented reason",
+    reviewOutcomeReason: "Reviewer reason",
     requesting: "Requesting...",
     queued: "Queued",
     reviewCreateError: "Human review request could not be created.",
@@ -1272,6 +1282,11 @@ const it: CandidateFlowCopy = {
     scoreExplanationAria: "Spiegazione punteggio",
     heroTitle: "Resta revisionato da persone e controllato dal candidato.",
     reviewRequested: "Revisione richiesta",
+    reviewStatusTitle: "Le tue richieste di revisione umana",
+    reviewStatusOpen: "In attesa di revisione umana",
+    reviewStatusUpheld: "Rivisto: valutazione originale confermata",
+    reviewStatusAdjusted: "Rivisto: rettificata con motivazione documentata",
+    reviewOutcomeReason: "Motivazione del reviewer",
     requesting: "Richiesta in corso...",
     queued: "In coda",
     reviewCreateError: "Impossibile creare la richiesta di revisione umana.",
@@ -1774,6 +1789,11 @@ const fr: CandidateFlowCopy = {
     scoreExplanationAria: "Explication du score",
     heroTitle: "Cela reste revu par des humains et controle par le candidat.",
     reviewRequested: "Revue demandee",
+    reviewStatusTitle: "Vos demandes de revue humaine",
+    reviewStatusOpen: "En attente de revue humaine",
+    reviewStatusUpheld: "Revu : evaluation d'origine confirmee",
+    reviewStatusAdjusted: "Revu : ajustee avec motif documente",
+    reviewOutcomeReason: "Motif du relecteur",
     requesting: "Demande en cours...",
     queued: "En file",
     reviewCreateError: "La demande de revue humaine n'a pas pu etre creee.",

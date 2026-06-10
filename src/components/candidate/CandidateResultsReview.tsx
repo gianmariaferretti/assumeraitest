@@ -28,13 +28,25 @@ type ReviewRequestState = {
   readonly requestedAt: string;
 };
 
+export type CandidateReviewRequestStatusEntry = {
+  readonly requestId: string;
+  readonly targetType: string;
+  readonly status: "open" | "upheld" | "adjusted";
+  readonly requestedAt: string;
+  readonly resolvedAt: string | null;
+  readonly outcomeReason: string | null;
+};
+
 export function CandidateResultsReview({
   language,
-  initialInterviewSession
+  initialInterviewSession,
+  initialReviewRequests = []
 }: {
   readonly language?: CandidateInterviewLanguageCode;
   /** Server-authoritative session passed down from the results page. */
   readonly initialInterviewSession?: InterviewSession | null;
+  /** Persisted human-review requests with their reviewer outcomes. */
+  readonly initialReviewRequests?: readonly CandidateReviewRequestStatusEntry[];
 }) {
   const copy = resolveCandidateFlowCopy(language).results;
   const [interviewSession, setInterviewSession] = useState<InterviewSession | null>(
@@ -170,6 +182,32 @@ export function CandidateResultsReview({
               </output>
             ) : null}
             {requestError ? <output className="result-error">{requestError}</output> : null}
+            {initialReviewRequests.length > 0 ? (
+              <section aria-label={copy.reviewStatusTitle} className="result-review-status">
+                <span>{copy.reviewStatusTitle}</span>
+                <ul>
+                  {initialReviewRequests.map((request) => (
+                    <li key={request.requestId} title={request.requestId}>
+                      <strong>
+                        {request.status === "upheld"
+                          ? copy.reviewStatusUpheld
+                          : request.status === "adjusted"
+                            ? copy.reviewStatusAdjusted
+                            : copy.reviewStatusOpen}
+                      </strong>
+                      <small>
+                        {formatReviewDate(request.resolvedAt ?? request.requestedAt)}
+                      </small>
+                      {request.status === "adjusted" && request.outcomeReason ? (
+                        <p>
+                          {copy.reviewOutcomeReason}: {request.outcomeReason}
+                        </p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
           </div>
 
           <nav className="result-links" aria-label={copy.resultActionsAria}>

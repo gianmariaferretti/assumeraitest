@@ -661,6 +661,92 @@ async function appendAuditEvent(
   );
 }
 
+export type CandidateHumanReviewRequestStatusRow = {
+  readonly requestId: string;
+  readonly targetType: string;
+  readonly targetId: string;
+  readonly status: "open" | "upheld" | "adjusted";
+  readonly requestedAt: string;
+  readonly resolvedAt: string | null;
+  readonly outcomeReason: string | null;
+};
+
+/**
+ * Persist a candidate-initiated human review request (owner-only insert; the
+ * reviewer outcome columns are written later through the service role).
+ */
+export async function persistHumanReviewRequest(
+  context: CandidateRouteContext,
+  request: {
+    readonly humanReviewRequestId: string;
+    readonly targetType: string;
+    readonly targetId: string;
+    readonly summary: string;
+    readonly evidenceNotes: string | null;
+    readonly requestedAt: string;
+    readonly auditEventId: string;
+  }
+): Promise<CandidatePersistenceResult> {
+  if (!isAuthenticatedCandidateContext(context)) {
+    return localFallbackResult(context);
+  }
+
+  return runSupabaseWrite(async () => {
+    await requireWrite(
+      context.supabase.from("human_review_requests").upsert(
+        {
+          user_id: context.user.id,
+          request_id: request.humanReviewRequestId,
+          target_type: request.targetType,
+          target_id: request.targetId,
+          summary: request.summary,
+          evidence_notes: request.evidenceNotes,
+          status: "open",
+          request_payload: toJson(request),
+          audit_event_id: request.auditEventId,
+          requested_at: request.requestedAt
+        },
+        { onConflict: "user_id,request_id", ignoreDuplicates: true }
+      )
+    );
+  });
+}
+
+/** The candidate's own review requests, newest first (results-page status). */
+export async function readCandidateHumanReviewRequests(
+  context: CandidateRouteContext
+): Promise<readonly CandidateHumanReviewRequestStatusRow[]> {
+  if (!isAuthenticatedCandidateContext(context)) {
+    return [];
+  }
+
+  try {
+    const result = await context.supabase
+      .from("human_review_requests")
+      .select("request_id,target_type,target_id,status,requested_at,resolved_at,outcome_reason")
+      .eq("user_id", context.user.id)
+      .order("requested_at", { ascending: false });
+    if (result.error || !result.data) {
+      return [];
+    }
+
+    return (result.data as Record<string, unknown>[]).map((row) => ({
+      requestId: String(row.request_id ?? ""),
+      targetType: String(row.target_type ?? ""),
+      targetId: String(row.target_id ?? ""),
+      status:
+        row.status === "upheld" || row.status === "adjusted"
+          ? row.status
+          : ("open" as const),
+      requestedAt: String(row.requested_at ?? ""),
+      resolvedAt: readString(row.resolved_at) ?? null,
+      outcomeReason: readString(row.outcome_reason) ?? null
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export type ModuleSessionPersistencePayload = {
   readonly interviewSessionId: string;
   readonly moduleId: string;

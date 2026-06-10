@@ -17,7 +17,10 @@ import {
   resolveCandidateRouteContext,
   type CandidateRouteContext
 } from "@/features/candidate-persistence/supabase-candidate-context";
-import { persistCandidateDataWorkflow } from "@/features/candidate-persistence/supabase-candidate-store";
+import {
+  persistCandidateDataWorkflow,
+  persistHumanReviewRequest
+} from "@/features/candidate-persistence/supabase-candidate-store";
 
 type CandidateDataWorkflowKind = "human_review" | "data_export" | "data_deletion";
 
@@ -106,6 +109,17 @@ async function handleCandidateDataWorkflowRequest(
           workflowId: reviewRequest.humanReviewRequestId,
           workflowPayload: reviewRequest,
           auditEvent
+        });
+        // Dedicated owner-only table: feeds the admin review queue and the
+        // candidate-visible status on the results page.
+        await persistHumanReviewRequest(candidateContext, {
+          humanReviewRequestId: reviewRequest.humanReviewRequestId,
+          targetType: reviewRequest.targetType,
+          targetId: reviewRequest.targetId,
+          summary: reviewRequest.summary,
+          evidenceNotes: reviewRequest.evidenceNotes,
+          requestedAt: reviewRequest.requestedAt,
+          auditEventId: reviewRequest.auditEventId
         });
       }
 
