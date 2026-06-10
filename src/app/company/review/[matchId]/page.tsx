@@ -4,6 +4,7 @@ import { CompanyCandidateReview } from "@/components/company/CompanyCandidateRev
 import {
   isCompanyContextError,
   readCompanyMatchForReview,
+  readIntegritySummariesForMatch,
   resolveCompanyRouteContext
 } from "@/features/company-workspace";
 
@@ -32,5 +33,8 @@ export default async function CompanyReviewPage({
     notFound();
   }
 
-  return <CompanyCandidateReview match={match} />;
+  // Read-only reviewer context; never an input to any score.
+  const integritySummaries = await readIntegritySummariesForMatch(match);
+
+  return <CompanyCandidateReview match={match} integritySummaries={integritySummaries} />;
 }

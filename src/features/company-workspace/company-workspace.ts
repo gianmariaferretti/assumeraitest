@@ -13,6 +13,11 @@ import {
   type RoleProfile
 } from "@/features/matching/matching-engine";
 import { findProtectedRequirementSignals } from "@/features/roles/protected-attributes";
+import {
+  integritySummaryHighlights,
+  readModuleIntegritySummary,
+  type ModuleIntegritySummary
+} from "@/features/interview-flow/integrity-signals";
 import { computeVerdictDueAt } from "@/features/matching/match-sla";
 import {
   candidateMatchNotificationEmail,
@@ -1291,6 +1296,75 @@ export async function readCompanyMatchForReview(
   }
 
   return mapCompanyMatchRow(result.data as Record<string, unknown>);
+}
+
+export type MatchIntegritySummary = {
+  readonly moduleId: string;
+  readonly summary: ModuleIntegritySummary;
+  /** Neutral, factual highlights ("3 tab switches, 1 long pause"). */
+  readonly highlights: readonly string[];
+};
+
+/**
+ * Read-only integrity context for a consent-approved match. Signals are
+ * surfaced verbatim for the human reviewer and are NEVER an input to any
+ * score computation. Only callable for matches the candidate already accepted
+ * (the review page gate); raw signals stay service-role.
+ */
+export async function readIntegritySummariesForMatch(
+  match: CompanyDashboardMatch
+): Promise<readonly MatchIntegritySummary[]> {
+  const consentApprovedStatuses: readonly CompanyMatchStatus[] = [
+    "candidate_accepted",
+    "company_advanced",
+    "company_hold",
+    "company_declined"
+  ];
+  if (!consentApprovedStatuses.includes(match.status)) {
+    return [];
+  }
+
+  let adminClient: SupabaseWriteClient;
+  try {
+    adminClient = createAdminClient();
+  } catch {
+    return [];
+  }
+
+  const result = await adminClient
+    .from("candidate_module_sessions")
+    .select("interview_session_id,module_id,module_payload,updated_at")
+    .eq("user_id", match.candidateUserId)
+    .order("updated_at", { ascending: false });
+  if (result.error || !result.data) {
+    return [];
+  }
+
+  const rows = asRows(result.data);
+  const latestSessionId = readString(rows[0]?.interview_session_id);
+  if (!latestSessionId) {
+    return [];
+  }
+
+  const summaries: MatchIntegritySummary[] = [];
+  for (const row of rows) {
+    if (readString(row.interview_session_id) !== latestSessionId) {
+      continue;
+    }
+    const payload = isRecord(row.module_payload) ? row.module_payload : {};
+    const moduleSession = isRecord(payload.module) ? payload.module : {};
+    const summary = readModuleIntegritySummary(moduleSession.integritySummary);
+    if (!summary || summary.turnsObserved === 0) {
+      continue;
+    }
+    summaries.push({
+      moduleId: readString(row.module_id) ?? "module",
+      summary,
+      highlights: integritySummaryHighlights(summary)
+    });
+  }
+
+  return summaries;
 }
 
 export async function readCandidateMatchFeedback(

@@ -76,6 +76,17 @@ export {
   MODULE_COMPETENCY_VERSION
 } from "./module-competencies";
 export {
+  accumulateIntegritySummary,
+  AUDIO_GAP_THRESHOLD_SECONDS,
+  emptyModuleIntegritySummary,
+  integritySummaryHighlights,
+  parseTurnIntegritySignals,
+  readModuleIntegritySummary,
+  type IntegrityAnomalyFlag,
+  type ModuleIntegritySummary,
+  type TurnIntegritySignals
+} from "./integrity-signals";
+export {
   conductTurn,
   type ConductTurnCandidateAnswer,
   type ConductTurnInput,
