@@ -625,6 +625,11 @@ function ScheduleReviewPanel({
                   ? formatDate(match.reviewDueAt, language)
                   : copy.scheduleReview.noDate}
               </small>
+              {formatReviewCountdown(match, copy) ? (
+                <small className={match.isOverdue ? "review-countdown overdue" : "review-countdown"}>
+                  {formatReviewCountdown(match, copy)}
+                </small>
+              ) : null}
               <ChevronRight aria-hidden="true" size={14} />
             </Link>
           ))}
@@ -825,6 +830,11 @@ function CandidateQueueRow({
             ? `${copy.match.reviewDueAt} ${formatDate(match.reviewDueAt, language)}`
             : copy.match.pending}
         </small>
+        {formatReviewCountdown(match, copy) ? (
+          <small className={match.isOverdue ? "review-countdown overdue" : "review-countdown"}>
+            {formatReviewCountdown(match, copy)}
+          </small>
+        ) : null}
         <small>
           {match.contactVisibility === "visible_after_advance"
             ? copy.candidateTable.contactVisible
@@ -957,6 +967,30 @@ function getScheduleLabel(match: CompanyDashboardMatch, copy: CompanyDashboardCo
   if (match.isOverdue) return copy.scheduleReview.overdue;
   if (match.status === "company_hold") return copy.scheduleReview.followUp;
   return copy.scheduleReview.review;
+}
+
+/**
+ * Per-match verdict countdown against the 14-day review SLA:
+ * "{n} days left", "due today", or "overdue by {n} days".
+ */
+function formatReviewCountdown(
+  match: CompanyDashboardMatch,
+  copy: CompanyDashboardCopy,
+  nowMs = Date.now()
+): string | null {
+  if (!match.reviewDueAt) return null;
+  const dueMs = Date.parse(match.reviewDueAt);
+  if (!Number.isFinite(dueMs)) return null;
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const daysLeft = Math.ceil((dueMs - nowMs) / dayMs);
+  if (daysLeft > 0) {
+    return copy.match.daysLeft.replace("{days}", String(daysLeft));
+  }
+  if (daysLeft === 0) {
+    return copy.match.dueToday;
+  }
+  return copy.match.overdueByDays.replace("{days}", String(Math.abs(daysLeft)));
 }
 
 function getRoleStatusLabel(

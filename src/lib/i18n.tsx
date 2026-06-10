@@ -2101,6 +2101,9 @@ const en = {
       statusActive: "Active",
     },
     match: {
+      daysLeft: "{days} days left",
+      dueToday: "Verdict due today",
+      overdueByDays: "Overdue by {days} days",
       advanced: "Advanced",
       hold: "On hold",
       declined: "Declined",
@@ -3063,6 +3066,9 @@ const it: TranslationContent = {
       statusActive: "Attivo",
     },
     match: {
+      daysLeft: "Mancano {days} giorni",
+      dueToday: "Verdetto in scadenza oggi",
+      overdueByDays: "In ritardo di {days} giorni",
       advanced: "Avanzato",
       hold: "In attesa",
       declined: "Rifiutato",
@@ -4024,6 +4030,9 @@ const fr: TranslationContent = {
       statusActive: "Actif",
     },
     match: {
+      daysLeft: "{days} jours restants",
+      dueToday: "Verdict attendu aujourd'hui",
+      overdueByDays: "En retard de {days} jours",
       advanced: "Avance",
       hold: "En attente",
       declined: "Refuse",
