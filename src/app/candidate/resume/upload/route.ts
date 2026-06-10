@@ -17,6 +17,8 @@ import {
   readRateLimitFromEnv,
   resolveRateLimitStore
 } from "@/lib/rate-limit";
+import { logError } from "@/lib/log";
+import { captureServerError } from "@/lib/sentry";
 import {
   createResumeUploadConfig,
   createSafeResumeUploadError
@@ -170,7 +172,14 @@ export async function POST(request: NextRequest) {
     );
     setCandidateResumeDocumentCookie(response, result.session.resumeDocument.id);
     return response;
-  } catch {
+  } catch (caught) {
+    // The candidate sees a safe error; the real failure goes to logs + Sentry.
+    logError("resume_upload_failed", {
+      route: "/candidate/resume/upload",
+      correlationId,
+      detail: caught instanceof Error ? caught.message : "unknown_error"
+    });
+    captureServerError(caught, { route: "/candidate/resume/upload", correlationId });
     const error = createSafeResumeUploadError("storage_failed", correlationId);
     return NextResponse.json({ error }, { status: error.status });
   }

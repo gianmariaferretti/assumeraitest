@@ -69,12 +69,12 @@ async function handleCandidateDataWorkflowRequest(
   try {
     const payload = await readPayload(request);
     const kind = readWorkflowKind(payload.kind);
+    // The acting candidate is always the resolved route context — a
+    // candidateId in the body or headers is never trusted.
     const candidateId =
       candidateContext?.mode === "authenticated" || candidateContext?.mode === "local_fallback"
         ? candidateContext.candidateId
-        : readOptionalString(payload.candidateId) ??
-          readOptionalString(request.headers.get("x-candidate-id")) ??
-          "local_candidate";
+        : "local_candidate";
     const requestedAt = new Date().toISOString();
     const correlationId =
       readOptionalString(payload.correlationId) ??

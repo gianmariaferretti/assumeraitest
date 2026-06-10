@@ -12,6 +12,7 @@ import {
 import { assertQuestionBankAllowed, containsDisallowedQuestionText } from "./safety";
 import type { FunnelPhase } from "../scoring/bars/types";
 import { recordLlmUsage, type LlmUsageRecorder } from "../../lib/llm-budget/core";
+import { logLlmTelemetry } from "../../lib/log";
 import type {
   InterviewQuestion,
   ResumeQuestionGrounding,
@@ -180,6 +181,7 @@ async function runResumeAwareQuestionPlan(
   let lastFailure: AnthropicRequestFailure | undefined;
 
   for (const model of modelCandidates) {
+    const startedAt = Date.now();
     try {
       const response = await fetchImpl(input.options?.endpoint ?? ANTHROPIC_API_ENDPOINT, {
         method: "POST",
@@ -203,6 +205,14 @@ async function runResumeAwareQuestionPlan(
 
       if (!response.ok) {
         lastFailure = await readAnthropicRequestFailure(response, model);
+        logLlmTelemetry({
+          site: "resume_question_planner",
+          provider: "anthropic",
+          model,
+          latencyMs: Date.now() - startedAt,
+          outcome: "error",
+          fallbackReason: `anthropic_request_failed_${lastFailure.status}`
+        });
         if (response.status === 404 && model !== modelCandidates.at(-1)) {
           continue;
         }
@@ -218,6 +228,15 @@ async function runResumeAwareQuestionPlan(
         model,
         inputTokens: message.usage?.input_tokens ?? 0,
         outputTokens: message.usage?.output_tokens ?? 0
+      });
+      logLlmTelemetry({
+        site: "resume_question_planner",
+        provider: "anthropic",
+        model,
+        latencyMs: Date.now() - startedAt,
+        inputTokens: message.usage?.input_tokens,
+        outputTokens: message.usage?.output_tokens,
+        outcome: "ok"
       });
       const parsed = parseJsonObject(extractTextContent(message));
       const adaptedQuestions = applyClaudeAdaptations(deterministicQuestions, parsed);
@@ -248,6 +267,13 @@ function fallbackResult(
   questions: InterviewQuestion[],
   fallbackReason: string
 ): BaseClaudeResumeQuestionPlanResult {
+  // Silent degradation must be visible: every fallback is a WARN log line.
+  logLlmTelemetry({
+    site: "resume_question_planner",
+    provider: "anthropic",
+    outcome: "fallback",
+    fallbackReason
+  });
   assertQuestionBankAllowed(questions);
 
   return {

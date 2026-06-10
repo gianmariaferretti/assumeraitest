@@ -1,0 +1,17 @@
+# Minimal Supabase CLI configuration: lets `supabase start` boot the local
+# stack and apply supabase/migrations (used by CI to verify migrations).
+project_id = "assumerai"
+
+[api]
+port = 54321
+
+[db]
+port = 54322
+major_version = 15
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"

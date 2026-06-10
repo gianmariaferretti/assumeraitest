@@ -88,6 +88,30 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Ownership: resumeDocumentId comes from the request body, so the parsed
+  // draft it resolves to (possibly from the shared in-process pipeline store)
+  // must belong to the authenticated candidate before it can be confirmed.
+  if (review.profile.candidate_id !== candidateId) {
+    if (!wantsJson) {
+      return redirectToProfileError(
+        request,
+        undefined,
+        "This resume document does not belong to your account."
+      );
+    }
+
+    return NextResponse.json(
+      {
+        error: {
+          code: "profile_ownership_required",
+          message: "This resume document does not belong to your account.",
+          status: 403
+        }
+      },
+      { status: 403 }
+    );
+  }
+
   const submittedValues = buildMinimalProfileReviewFormValues(formData, review.reviewFields);
   const requiredFieldValidation = validateMinimalProfileReviewRequiredFields(
     submittedValues,

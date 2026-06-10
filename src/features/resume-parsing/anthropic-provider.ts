@@ -5,6 +5,7 @@ import {
   type ResumeParserProviderResult
 } from "./contracts";
 import { recordLlmUsage, type LlmUsageRecorder } from "../../lib/llm-budget/core";
+import { logLlmTelemetry } from "../../lib/log";
 
 const ANTHROPIC_API_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_API_VERSION = "2023-06-01";
@@ -80,6 +81,7 @@ export function createAnthropicResumeParserProvider(
       let lastFailure: AnthropicRequestFailure | undefined;
 
       for (const candidateModel of modelCandidates) {
+        const startedAt = Date.now();
         const response = await fetchImpl(options.endpoint ?? ANTHROPIC_API_ENDPOINT, {
           method: "POST",
           headers: {
@@ -102,6 +104,14 @@ export function createAnthropicResumeParserProvider(
 
         if (!response.ok) {
           lastFailure = await readAnthropicRequestFailure(response, candidateModel);
+          logLlmTelemetry({
+            site: "resume_parser",
+            provider: "anthropic",
+            model: candidateModel,
+            latencyMs: Date.now() - startedAt,
+            outcome: "error",
+            fallbackReason: `anthropic_request_failed_${lastFailure.status}`
+          });
 
           if (response.status === 404 && candidateModel !== modelCandidates.at(-1)) {
             continue;
@@ -115,6 +125,15 @@ export function createAnthropicResumeParserProvider(
           model: candidateModel,
           inputTokens: message.usage?.input_tokens ?? 0,
           outputTokens: message.usage?.output_tokens ?? 0
+        });
+        logLlmTelemetry({
+          site: "resume_parser",
+          provider: "anthropic",
+          model: candidateModel,
+          latencyMs: Date.now() - startedAt,
+          inputTokens: message.usage?.input_tokens,
+          outputTokens: message.usage?.output_tokens,
+          outcome: "ok"
         });
         const text = extractTextContent(message);
         const parsed = parseJsonObject(text);

@@ -6,7 +6,8 @@ import {
 } from "@/features/live-interview/deepgram-token-grant";
 import {
   isCandidateContextError,
-  resolveCandidateRouteContext
+  resolveCandidateRouteContext,
+  shouldAllowLocalCandidateFallback
 } from "@/features/candidate-persistence/supabase-candidate-context";
 import { readCandidateProgress } from "@/features/candidate-persistence/supabase-candidate-store";
 import {
@@ -54,18 +55,36 @@ export async function POST(request: NextRequest) {
   }
 
   const progress = await readCandidateProgress(candidateContext);
+
+  // Security gates are authoritative in Supabase. Device cookies are a
+  // convenience only for explicitly-enabled local development
+  // (ASSUMERAI_ALLOW_LOCAL_CANDIDATE_FALLBACK); in production an unreadable
+  // progress record fails closed instead of trusting client cookies.
+  if (progress.status !== "supabase_persisted" && !shouldAllowLocalCandidateFallback()) {
+    return tokenError(
+      "candidate_progress_unavailable",
+      "Interview readiness could not be verified. Try again shortly.",
+      503
+    );
+  }
+
+  const allowCookieFallback =
+    progress.status !== "supabase_persisted" && shouldAllowLocalCandidateFallback();
   const profileConfirmed =
     progress.status === "supabase_persisted"
       ? progress.profileConfirmed
-      : request.cookies.get("assumerai_profile_confirmed")?.value === "true";
+      : allowCookieFallback &&
+        request.cookies.get("assumerai_profile_confirmed")?.value === "true";
   const disclosureAcknowledged =
     progress.status === "supabase_persisted"
       ? progress.disclosureAcknowledged
-      : request.cookies.get("assumerai_ai_disclosure_acknowledged")?.value === "true";
+      : allowCookieFallback &&
+        request.cookies.get("assumerai_ai_disclosure_acknowledged")?.value === "true";
   const deviceCheckCompleted =
     progress.status === "supabase_persisted"
       ? progress.deviceCheckCompleted
-      : request.cookies.get("assumerai_interview_device_check_completed")?.value === "true";
+      : allowCookieFallback &&
+        request.cookies.get("assumerai_interview_device_check_completed")?.value === "true";
 
   if (!profileConfirmed) {
     return tokenError("profile_required", "Profile confirmation is required.", 403);

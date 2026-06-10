@@ -1,3 +1,5 @@
+import { logLlmTelemetry } from "../../lib/log";
+
 export type DeepgramFetch = (input: string, init?: RequestInit) => Promise<Response>;
 
 export interface DeepgramTokenGrantClientOptions {
@@ -66,6 +68,7 @@ export function createDeepgramTokenGrantClient(options: DeepgramTokenGrantClient
 
   return {
     async grantToken(): Promise<DeepgramTokenGrantResult> {
+      const startedAt = Date.now();
       const response = await fetchImpl(buildDeepgramApiUrl(baseUrl, "auth/grant"), {
         body: JSON.stringify({ ttl_seconds: ttlSeconds }),
         headers: {
@@ -76,8 +79,24 @@ export function createDeepgramTokenGrantClient(options: DeepgramTokenGrantClient
       });
 
       if (!response.ok) {
+        logLlmTelemetry({
+          site: "deepgram_token_grant",
+          provider: "deepgram",
+          model: "auth/grant",
+          latencyMs: Date.now() - startedAt,
+          outcome: "error",
+          fallbackReason: `deepgram_request_failed_${response.status}`
+        });
         throw await createDeepgramGrantError(response);
       }
+
+      logLlmTelemetry({
+        site: "deepgram_token_grant",
+        provider: "deepgram",
+        model: "auth/grant",
+        latencyMs: Date.now() - startedAt,
+        outcome: "ok"
+      });
 
       const payload: unknown = await response.json();
       if (!isJsonRecord(payload)) {

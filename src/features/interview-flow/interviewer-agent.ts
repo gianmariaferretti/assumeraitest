@@ -6,6 +6,7 @@ import {
 import type { FunnelDecision, FunnelState } from "./funnel-state-machine";
 import type { BarsCompetency, FunnelPhase } from "../scoring/bars/types";
 import { recordLlmUsage, type LlmUsageRecorder } from "../../lib/llm-budget/core";
+import { logLlmTelemetry } from "../../lib/log";
 
 /**
  * Interviewer Agent — Function 2.
@@ -148,6 +149,7 @@ export async function generateInterviewerTurn(
   let lastStatus: number | undefined;
 
   for (const model of modelCandidates) {
+    const startedAt = Date.now();
     try {
       const response = await fetchImpl(input.options?.endpoint ?? ANTHROPIC_API_ENDPOINT, {
         method: "POST",
@@ -167,6 +169,14 @@ export async function generateInterviewerTurn(
 
       if (!response.ok) {
         lastStatus = response.status;
+        logLlmTelemetry({
+          site: "interviewer_agent",
+          provider: "anthropic",
+          model,
+          latencyMs: Date.now() - startedAt,
+          outcome: "error",
+          fallbackReason: `anthropic_request_failed_${response.status}`,
+        });
         if (response.status === 404 && model !== modelCandidates.at(-1)) {
           continue;
         }
@@ -178,6 +188,15 @@ export async function generateInterviewerTurn(
         model,
         inputTokens: message.usage?.input_tokens ?? 0,
         outputTokens: message.usage?.output_tokens ?? 0,
+      });
+      logLlmTelemetry({
+        site: "interviewer_agent",
+        provider: "anthropic",
+        model,
+        latencyMs: Date.now() - startedAt,
+        inputTokens: message.usage?.input_tokens,
+        outputTokens: message.usage?.output_tokens,
+        outcome: "ok",
       });
       const text = sanitizeTurnText(extractTextContent(message));
       return {
@@ -261,6 +280,13 @@ function deterministicTurn(
   input: InterviewerTurnInput,
   fallbackReason: string,
 ): InterviewerTurn {
+  // Silent degradation must be visible: every fallback is a WARN log line.
+  logLlmTelemetry({
+    site: "interviewer_agent",
+    provider: "anthropic",
+    outcome: "fallback",
+    fallbackReason,
+  });
   const text = sanitizeTurnText(buildDeterministicText(input));
   return {
     text,

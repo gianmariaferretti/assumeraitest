@@ -1,6 +1,7 @@
 import { containsDisallowedQuestionText } from "../../interview-flow/safety";
 import type { StarEvidenceElement } from "../../interview-flow/types";
 import { recordLlmUsage, type LlmUsageRecorder } from "../../../lib/llm-budget/core";
+import { logLlmTelemetry } from "../../../lib/log";
 import {
   barsLevelForScore,
   countCompleteStarElements,
@@ -112,6 +113,7 @@ export async function evaluateResponseWithBars(
   let lastStatus: number | undefined;
 
   for (const model of modelCandidates) {
+    const startedAt = Date.now();
     try {
       const response = await fetchImpl(input.options?.endpoint ?? ANTHROPIC_API_ENDPOINT, {
         method: "POST",
@@ -136,6 +138,14 @@ export async function evaluateResponseWithBars(
 
       if (!response.ok) {
         lastStatus = response.status;
+        logLlmTelemetry({
+          site: "bars_evaluator",
+          provider: "anthropic",
+          model,
+          latencyMs: Date.now() - startedAt,
+          outcome: "error",
+          fallbackReason: `anthropic_request_failed_${response.status}`,
+        });
         if (response.status === 404 && model !== modelCandidates.at(-1)) {
           continue;
         }
@@ -147,6 +157,15 @@ export async function evaluateResponseWithBars(
         model,
         inputTokens: message.usage?.input_tokens ?? 0,
         outputTokens: message.usage?.output_tokens ?? 0,
+      });
+      logLlmTelemetry({
+        site: "bars_evaluator",
+        provider: "anthropic",
+        model,
+        latencyMs: Date.now() - startedAt,
+        inputTokens: message.usage?.input_tokens,
+        outputTokens: message.usage?.output_tokens,
+        outcome: "ok",
       });
       const parsed = parseJsonObject(extractTextContent(message));
       const evaluation = mapProviderEvaluation(input, parsed, model);
@@ -170,6 +189,13 @@ export async function evaluateResponseWithBars(
 }
 
 function finalizeFallback(input: EvaluateResponseInput, reason: string): BarsEvaluation {
+  // Silent degradation must be visible: every fallback is a WARN log line.
+  logLlmTelemetry({
+    site: "bars_evaluator",
+    provider: "anthropic",
+    outcome: "fallback",
+    fallbackReason: reason,
+  });
   return deterministicEvaluation(input, reason);
 }
 
