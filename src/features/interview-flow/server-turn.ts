@@ -591,6 +591,8 @@ export async function conductServerTurn(
     hasMorePrimaryQuestions,
     hasMoreCompetencies,
     elapsedSecondsForTurn,
+    arcStage: question.arcStage,
+    scoringMode: question.scoringMode,
     now,
     evaluatorOptions: input.evaluatorOptions,
     interviewerOptions: input.interviewerOptions

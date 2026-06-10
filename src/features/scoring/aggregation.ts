@@ -1,4 +1,4 @@
-import type { ModuleId } from "../interview-flow/types";
+import type { ModuleId, TurnScoringMode } from "../interview-flow/types";
 import {
   barsLevelForScore,
   countCompleteStarElements,
@@ -93,22 +93,51 @@ export interface CompetencyMeta {
   readonly tier?: CompetencyTier;
 }
 
+/**
+ * Realistic-arc scoring weights (Phase 11). A baseline_only turn (the warm-up
+ * opening, the closing courtesy questions) NEVER moves any competency score:
+ * it is excluded from aggregation entirely. low_weight turns (role-family
+ * motivation, the strengths on-ramp) count at half weight.
+ */
+export const SCORING_MODE_WEIGHTS: Readonly<Record<TurnScoringMode, number>> = {
+  baseline_only: 0,
+  low_weight: 0.5,
+  full: 1,
+};
+
+/** A BARS evaluation optionally annotated with its turn's scoring mode. */
+export type ScoringModeAwareEvaluation = BarsEvaluation & {
+  readonly scoring_mode?: TurnScoringMode;
+};
+
+function scoringModeWeight(evaluation: ScoringModeAwareEvaluation): number {
+  return SCORING_MODE_WEIGHTS[evaluation.scoring_mode ?? "full"];
+}
+
 /** Group evaluations by competency and reduce each to a competency score. */
 export function assessCompetencyScores(
-  evaluations: readonly BarsEvaluation[],
+  evaluations: readonly ScoringModeAwareEvaluation[],
   metaByCompetency: Readonly<Record<string, CompetencyMeta>> = {},
 ): CompetencyScore[] {
-  const byCompetency = new Map<string, BarsEvaluation[]>();
-  for (const evaluation of evaluations) {
+  // baseline_only turns are excluded before any aggregation: they calibrate a
+  // communication baseline and must never move a competency score.
+  const scorable = evaluations.filter((evaluation) => scoringModeWeight(evaluation) > 0);
+
+  const byCompetency = new Map<string, ScoringModeAwareEvaluation[]>();
+  for (const evaluation of scorable) {
     const list = byCompetency.get(evaluation.competency_id) ?? [];
     list.push(evaluation);
     byCompetency.set(evaluation.competency_id, list);
   }
 
   return [...byCompetency.entries()].map(([competencyId, runs]) => {
-    // Confidence-weighted mean keeps low-confidence answers from dominating.
+    // Confidence-weighted mean keeps low-confidence answers from dominating;
+    // the arc scoring mode scales the weight on top of confidence.
     const weighted = weightedMean(
-      runs.map((run) => ({ value: run.bars_score, weight: Math.max(0.1, run.confidence) })),
+      runs.map((run) => ({
+        value: run.bars_score,
+        weight: Math.max(0.1, run.confidence) * scoringModeWeight(run),
+      })),
     );
     const score = clampScore(weighted);
     const meanStar =
@@ -122,7 +151,10 @@ export function assessCompetencyScores(
       redFlags.some((flag) => flag.severity === "high");
 
     const scoreInterval = bootstrapWeightedMean(
-      runs.map((run) => ({ value: run.bars_score, weight: Math.max(0.1, run.confidence) })),
+      runs.map((run) => ({
+        value: run.bars_score,
+        weight: Math.max(0.1, run.confidence) * scoringModeWeight(run),
+      })),
     );
 
     return {

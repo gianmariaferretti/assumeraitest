@@ -13,7 +13,12 @@ import {
   type EnsembleEvaluatorOptions,
 } from "../scoring/bars/ensemble-evaluator";
 import type { BarsCompetency, BarsEvaluation, BarsLevel } from "../scoring/bars/types";
-import type { InterviewSession, StarEvidenceElement } from "./types";
+import type {
+  InterviewArcStage,
+  InterviewSession,
+  StarEvidenceElement,
+  TurnScoringMode,
+} from "./types";
 
 /**
  * Conduct one interview turn end-to-end. This is the seam that wires the three
@@ -59,6 +64,10 @@ export interface ConductTurnInput {
   hasMorePrimaryQuestions?: boolean;
   hasMoreCompetencies?: boolean;
   elapsedSecondsForTurn?: number;
+  /** Realistic-arc stage of the answered question (Phase 11). */
+  arcStage?: InterviewArcStage;
+  /** How this turn's evaluation enters competency scores (default full). */
+  scoringMode?: TurnScoringMode;
   persona?: InterviewerPersona;
   now?: string;
   evaluatorOptions?: EnsembleEvaluatorOptions;
@@ -90,6 +99,10 @@ export interface InterviewEvaluatorRunRecord {
   replicate_group_id: string | null;
   red_flag_count: number;
   high_severity_red_flag_count: number;
+  /** Realistic-arc stage of the answered question (Phase 11). */
+  arc_stage: InterviewArcStage | null;
+  /** baseline_only runs NEVER enter competency scores; low_weight is reduced. */
+  scoring_mode: TurnScoringMode;
 }
 
 export interface ConductTurnResult {
@@ -126,10 +139,10 @@ export async function conductTurn(input: ConductTurnInput): Promise<ConductTurnR
       input.evaluatorOptions,
     );
     const replicateGroupId = evaluation.replicate_group_id;
-    evaluatorRun = buildEvaluatorRunRecord(input.session, input.moduleId, evaluation, replicateGroupId);
+    evaluatorRun = buildEvaluatorRunRecord(input, evaluation, replicateGroupId);
     // Persist every individual rater run for audit, sharing the replicate group.
     evaluatorRuns = evaluation.individual_runs.map((run) =>
-      buildEvaluatorRunRecord(input.session, input.moduleId, run, replicateGroupId),
+      buildEvaluatorRunRecord(input, run, replicateGroupId),
     );
   }
 
@@ -173,11 +186,11 @@ export async function conductTurn(input: ConductTurnInput): Promise<ConductTurnR
 }
 
 function buildEvaluatorRunRecord(
-  session: InterviewSession,
-  moduleId: string,
+  input: ConductTurnInput,
   evaluation: BarsEvaluation,
   replicateGroupId: string | null = null,
 ): InterviewEvaluatorRunRecord {
+  const session = input.session;
   const highSeverity = evaluation.red_flags.filter((flag) => flag.severity === "high").length;
 
   return {
@@ -185,7 +198,7 @@ function buildEvaluatorRunRecord(
     candidate_id: session.candidateId,
     question_id: evaluation.question_id,
     competency_id: evaluation.competency_id,
-    module_id: moduleId,
+    module_id: input.moduleId,
     bars_score: evaluation.bars_score,
     bars_level: evaluation.bars_level,
     star_situation: evaluation.star_completeness.situation,
@@ -201,5 +214,7 @@ function buildEvaluatorRunRecord(
     replicate_group_id: replicateGroupId,
     red_flag_count: evaluation.red_flags.length,
     high_severity_red_flag_count: highSeverity,
+    arc_stage: input.arcStage ?? null,
+    scoring_mode: input.scoringMode ?? "full",
   };
 }

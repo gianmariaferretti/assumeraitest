@@ -1,4 +1,5 @@
 import { assertQuestionBankAllowed } from "./safety";
+import { buildInterviewArcQuestions } from "./interview-arc";
 import {
   localizeInterviewQuestions,
   localizedModuleDefinition,
@@ -396,6 +397,17 @@ export function selectQuestionBankForRole(
   );
 
   const localized = localizeInterviewQuestions(ordered, interviewLanguage);
-  assertQuestionBankAllowed(localized);
-  return localized;
+
+  // Realistic arc (Phase 11): canonical opening/motivation/self-awareness/
+  // closing items frame the localized module questions. The motivation
+  // module's own question is replaced by the canonical block; behavioral and
+  // situational module questions keep their resume-aware treatment.
+  const arc = buildInterviewArcQuestions({
+    moduleQuestions: localized.filter((question) => question.moduleId !== "motivation"),
+    roleFamily,
+    seniority: roleProfile.seniority,
+    language: interviewLanguage
+  });
+  assertQuestionBankAllowed(arc);
+  return arc;
 }

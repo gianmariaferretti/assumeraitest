@@ -76,6 +76,34 @@ export {
   MODULE_COMPETENCY_VERSION
 } from "./module-competencies";
 export {
+  ARC_STAGE_ORDER,
+  arcStageForModule,
+  arcStageRank,
+  buildInterviewArcQuestions,
+  resolveSeniorityBand,
+  resolveStarSjtMix,
+  validateArcOrder,
+  type ArcOrderViolation,
+  type BuildInterviewArcInput
+} from "./interview-arc";
+export {
+  buildCanonicalQuestion,
+  CANONICAL_LANGUAGES,
+  CANONICAL_QUESTION_BANK,
+  canonicalEntriesForStage,
+  isCanonicalQuestionId,
+  resolveCanonicalLanguage,
+  type CanonicalLanguage,
+  type CanonicalQuestionEntry,
+  type CanonicalSeniorityBand
+} from "./canonical-questions";
+export {
+  containsEmployerPresupposingText,
+  containsEmployerVoice,
+  EMPLOYER_PRESUPPOSING_PATTERNS,
+  EMPLOYER_VOICE_PATTERNS
+} from "./platform-neutrality";
+export {
   accumulateIntegritySummary,
   AUDIO_GAP_THRESHOLD_SECONDS,
   emptyModuleIntegritySummary,
@@ -133,6 +161,7 @@ export type {
   FollowUpReason,
   FollowUpRule,
   GlobalInterviewStatus,
+  InterviewArcStage,
   InterviewMode,
   InterviewModule,
   InterviewQuestion,
@@ -151,6 +180,7 @@ export type {
   RoleFamily,
   RoleHardGate,
   RoleProfileInput,
+  TurnScoringMode,
   RoleRequiredLanguage
 } from "./types";
 export type {
