@@ -10,8 +10,13 @@ import {
   createCompanyMatch,
   type CandidateProfile,
   type CompanyProfile,
+  type MatchWeightSet,
   type RoleProfile
 } from "@/features/matching/matching-engine";
+import {
+  loadActiveMatchWeights,
+  type MatchWeightSetClient
+} from "@/features/matching/persistence";
 import { findProtectedRequirementSignals } from "@/features/roles/protected-attributes";
 import {
   integritySummaryHighlights,
@@ -915,6 +920,11 @@ export async function materializeCandidateMatchesForCandidate(
         ])
       );
       const candidate = buildMatchingCandidateProfile(context.user.id, candidateProfileJson);
+      // Versioned weights: load the active set once per run; the in-code
+      // defaults are the fallback when the table is unreachable.
+      const weightSet = await loadActiveMatchWeights(
+        adminClient as unknown as MatchWeightSetClient
+      );
       const upserts = asRows(rolesResult.data)
         .map((roleRow) =>
           buildCandidateVisibleMatchUpsert({
@@ -922,6 +932,7 @@ export async function materializeCandidateMatchesForCandidate(
             roleRow,
             workspaceRow:
               workspaceByCompanyId.get(readString(roleRow.company_id) ?? "") ?? {},
+            weightSet,
             existingRow: existingByMatchId.get(
               `match_${sanitizeId(context.user.id)}_${sanitizeId(readString(roleRow.role_id) ?? "")}`
             )
@@ -1655,11 +1666,13 @@ function buildCandidateVisibleMatchUpsert({
   candidate,
   roleRow,
   workspaceRow,
+  weightSet,
   existingRow
 }: {
   readonly candidate: CandidateProfile;
   readonly roleRow: Record<string, unknown>;
   readonly workspaceRow: Record<string, unknown>;
+  readonly weightSet: MatchWeightSet;
   readonly existingRow: Record<string, unknown> | undefined;
 }): Record<string, unknown> | null {
   const existingStatus = readString(existingRow?.status);
@@ -1677,6 +1690,7 @@ function buildCandidateVisibleMatchUpsert({
     candidate,
     role,
     company,
+    weightSet,
     matchId,
     inputHash: `candidate-visible:${candidate.candidate_id}:${role.role_id}`
   });
@@ -1714,6 +1728,7 @@ function buildCandidateVisibleMatchUpsert({
       reasons: match.explanations.candidate_facing.supporting_evidence,
       gaps: match.explanations.candidate_facing.missing_evidence,
       scorecardVersion: match.scoring_version,
+      weightsVersion: match.weights_version,
       recommendation_only: true,
       raw_cv_included: false,
       raw_interview_media_included: false
