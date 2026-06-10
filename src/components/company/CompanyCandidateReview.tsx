@@ -2,7 +2,7 @@
 
 import { ArrowUpRight, Clock3, FileText, PauseCircle, XCircle } from "lucide-react";
 
-import type { CompanyDashboardMatch } from "@/features/company-workspace";
+import type { CompanyDashboardMatch, MatchIntegritySummary } from "@/features/company-workspace";
 import { useI18n, type Language } from "@/lib/i18n";
 
 type CompanyReviewCopy = ReturnType<typeof useI18n>["t"]["companyReview"];
@@ -16,9 +16,11 @@ const consentCategories: readonly ConsentCategory[] = [
 ];
 
 export function CompanyCandidateReview({
-  match
+  match,
+  integritySummaries = []
 }: {
   readonly match: CompanyDashboardMatch;
+  readonly integritySummaries?: readonly MatchIntegritySummary[];
 }) {
   const { language, t } = useI18n();
   const copy = t.companyReview;
@@ -94,6 +96,26 @@ export function CompanyCandidateReview({
             <pre className="scorecard-payload">
               {JSON.stringify(match.matchExplanation, null, 2)}
             </pre>
+          </section>
+
+          <section aria-labelledby="integrity-signals">
+            <div className="review-section-title">
+              <FileText aria-hidden="true" size={18} />
+              <h2 id="integrity-signals">{copy.integritySignals}</h2>
+            </div>
+            <p className="media-boundary">{copy.integritySignalsIntro}</p>
+            {integritySummaries.length > 0 ? (
+              <ul className="consent-scope-list">
+                {integritySummaries.map((entry) => (
+                  <li key={entry.moduleId}>
+                    <strong>{entry.moduleId}</strong>: {entry.highlights.join(", ")}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="media-boundary">{copy.integrityNoSignals}</p>
+            )}
+            <p className="media-boundary">{copy.integrityNeverScored}</p>
           </section>
 
           <section aria-labelledby="transcript">

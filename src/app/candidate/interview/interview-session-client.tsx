@@ -5,10 +5,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CandidateProgressRail } from "@/components/candidate/CandidateProgressRail";
 import {
+  AUDIO_GAP_THRESHOLD_SECONDS,
   currentQuestion,
   type CandidateInterviewLanguageCode,
   type InterviewQuestion,
-  type InterviewSession
+  type InterviewSession,
+  type TurnIntegritySignals
 } from "@/features/interview-flow";
 import {
   resolveCandidateFlowCopy
@@ -94,6 +96,22 @@ interface InterviewSessionClientProps {
   readonly initialSession: InterviewSession;
   readonly initialInterviewLanguage: CandidateInterviewLanguageCode;
   readonly initialQuestionPlanAudit?: QuestionPlanAudit;
+}
+
+function emptyTurnIntegritySignals(): {
+  tabHiddenCount: number;
+  windowBlurCount: number;
+  pasteCount: number;
+  audioGapCount: number;
+  maxAudioGapSeconds: number;
+} {
+  return {
+    tabHiddenCount: 0,
+    windowBlurCount: 0,
+    pasteCount: 0,
+    audioGapCount: 0,
+    maxAudioGapSeconds: 0
+  };
 }
 
 function activeModuleIdFor(session: InterviewSession): string | null {
@@ -204,6 +222,11 @@ export function InterviewSessionClient({
   const copy = resolveCandidateFlowCopy(initialInterviewLanguage).interview;
   void initialQuestionPlanAudit;
   const snapshotPersistenceTimerRef = useRef<number | null>(null);
+  // Honest integrity signals for the current turn: coarse counters only —
+  // no keystroke logging, no camera analysis, no biometrics (safety.ts
+  // philosophy). Reset whenever a new server turn is issued.
+  const integritySignalsRef = useRef(emptyTurnIntegritySignals());
+  const lastVoiceActivityAtRef = useRef<number | null>(null);
   const [session, setSession] = useState<InterviewSession>(initialSession);
   const [activeTurn, setActiveTurn] = useState<ActiveTurn | null>(null);
   const [providerSession, setProviderSession] = useState<LiveInterviewProviderSession>(() =>
@@ -338,6 +361,58 @@ export function InterviewSessionClient({
         window.clearTimeout(snapshotPersistenceTimerRef.current);
       }
     };
+  }, []);
+
+  // Collect coarse focus/paste signals for the active turn (counts only).
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        integritySignalsRef.current.tabHiddenCount += 1;
+      }
+    };
+    const onWindowBlur = () => {
+      integritySignalsRef.current.windowBlurCount += 1;
+    };
+    const onPaste = () => {
+      integritySignalsRef.current.pasteCount += 1;
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("blur", onWindowBlur);
+    document.addEventListener("paste", onPaste);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", onWindowBlur);
+      document.removeEventListener("paste", onPaste);
+    };
+  }, []);
+
+  // A fresh server turn starts a fresh signal window.
+  useEffect(() => {
+    integritySignalsRef.current = emptyTurnIntegritySignals();
+    lastVoiceActivityAtRef.current = null;
+  }, [activeTurn?.turnId]);
+
+  /** Track audio continuity: long gaps between transcript updates while recording. */
+  const recordVoiceActivity = useCallback(() => {
+    const now = Date.now();
+    const last = lastVoiceActivityAtRef.current;
+    if (last !== null) {
+      const gapSeconds = (now - last) / 1000;
+      if (gapSeconds >= AUDIO_GAP_THRESHOLD_SECONDS) {
+        integritySignalsRef.current.audioGapCount += 1;
+        integritySignalsRef.current.maxAudioGapSeconds = Math.max(
+          integritySignalsRef.current.maxAudioGapSeconds,
+          gapSeconds
+        );
+      }
+    }
+    lastVoiceActivityAtRef.current = now;
+  }, []);
+
+  const handleVoiceCaptureActiveChange = useCallback((active: boolean) => {
+    setIsVoiceCaptureActive(active);
+    lastVoiceActivityAtRef.current = active ? Date.now() : null;
   }, []);
 
   useEffect(() => {
@@ -520,7 +595,8 @@ export function InterviewSessionClient({
           body: JSON.stringify({
             moduleId: activeTurn.moduleId,
             turnId: activeTurn.turnId,
-            candidateAnswer: { answerText }
+            candidateAnswer: { answerText },
+            integritySignals: { ...integritySignalsRef.current } satisfies TurnIntegritySignals
           })
         });
         const data = (await response.json().catch(() => null)) as {
@@ -734,6 +810,7 @@ export function InterviewSessionClient({
   }
 
   function captureTranscribedAnswer(transcript: string) {
+    recordVoiceActivity();
     setCapturedTranscript(transcript.trim());
     setError("");
   }
@@ -803,7 +880,7 @@ export function InterviewSessionClient({
                     }
                     interviewLanguage={session.interviewLanguage}
                     maxDurationSeconds={LIVE_INTERVIEW_RESPONSE_WINDOW_SECONDS}
-                    onCaptureActiveChange={setIsVoiceCaptureActive}
+                    onCaptureActiveChange={handleVoiceCaptureActiveChange}
                     onError={setError}
                     onRemainingTimeChange={setResponseTimeRemainingLabel}
                     onTimeExpired={handleResponseTimeExpired}

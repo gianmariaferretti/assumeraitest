@@ -13,6 +13,20 @@ import {
   type RoleProfile
 } from "@/features/matching/matching-engine";
 import { findProtectedRequirementSignals } from "@/features/roles/protected-attributes";
+import {
+  integritySummaryHighlights,
+  readModuleIntegritySummary,
+  type ModuleIntegritySummary
+} from "@/features/interview-flow/integrity-signals";
+import { computeVerdictDueAt } from "@/features/matching/match-sla";
+import {
+  candidateMatchNotificationEmail,
+  candidateVerdictNotificationEmail,
+  resolveEmailProvider,
+  resolveEmailTemplateLanguage,
+  type MatchVerdict
+} from "@/lib/email";
+import { logWarn } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { AuthenticatedCompanyRouteContext } from "./company-route-context";
@@ -1039,7 +1053,165 @@ export async function persistCandidateMatchAcceptance(
         .eq("role_id", input.roleId)
         .eq("status", "candidate_visible")
     );
+
+    // Acceptance starts the employer-review clock: open the 14-day verdict
+    // SLA and tell the candidate when a verdict is due.
+    if (input.decision === "accepted" && reviewDueAt) {
+      await requireWrite(
+        adminClient.from("match_sla").upsert(
+          {
+            match_id: input.matchId,
+            company_id: input.companyId,
+            role_id: input.roleId,
+            candidate_user_id: context.user.id,
+            entered_review_at: input.decidedAt,
+            verdict_due_at: computeVerdictDueAt(input.decidedAt),
+            updated_at: input.decidedAt
+          },
+          { onConflict: "match_id", ignoreDuplicates: true }
+        )
+      );
+
+      await sendCandidateMatchNotification(context, {
+        companyName: input.companyName ?? input.companyId,
+        roleTitle: input.roleTitle ?? input.roleId,
+        verdictDueAt: reviewDueAt
+      });
+    }
   });
+}
+
+/** Non-fatal: a notification failure never blocks the candidate's decision. */
+async function sendCandidateMatchNotification(
+  context: AuthenticatedCandidateContext,
+  input: {
+    readonly companyName: string;
+    readonly roleTitle: string;
+    readonly verdictDueAt: string;
+  }
+): Promise<void> {
+  try {
+    const candidateEmail = context.user.email;
+    if (!candidateEmail) {
+      return;
+    }
+
+    const progressResult = await context.supabase
+      .from("candidate_interview_progress")
+      .select("interview_language")
+      .eq("user_id", context.user.id)
+      .maybeSingle();
+    const language = resolveEmailTemplateLanguage(
+      (progressResult.data as Record<string, unknown> | null)?.interview_language
+    );
+
+    const rendered = candidateMatchNotificationEmail({
+      language,
+      companyName: input.companyName,
+      roleTitle: input.roleTitle,
+      verdictDueAt: input.verdictDueAt
+    });
+    const sent = await resolveEmailProvider().send({
+      to: candidateEmail,
+      subject: rendered.subject,
+      text: rendered.text
+    });
+    if (!sent.ok) {
+      logWarn("candidate_match_notification_failed", { detail: sent.error });
+    }
+  } catch (error) {
+    logWarn("candidate_match_notification_failed", {
+      detail: error instanceof Error ? error.message : "unknown_error"
+    });
+  }
+}
+
+/**
+ * Stamp the SLA verdict and notify the candidate after a company decision.
+ * Called by the company review decision route; every failure is non-fatal and
+ * logged, so a notification problem never blocks the recorded verdict.
+ */
+export async function recordMatchVerdictAndNotify(input: {
+  readonly matchId: string;
+  readonly action: CompanyMatchDecisionAction;
+  readonly decidedAt: string;
+}): Promise<void> {
+  let adminClient: SupabaseWriteClient;
+  try {
+    adminClient = createAdminClient();
+  } catch {
+    logWarn("match_verdict_sla_skipped", {
+      matchId: input.matchId,
+      detail: "Service role is not configured."
+    });
+    return;
+  }
+
+  try {
+    await adminClient
+      .from("match_sla")
+      .update({ verdict_at: input.decidedAt, updated_at: input.decidedAt })
+      .eq("match_id", input.matchId);
+
+    const matchResult = await adminClient
+      .from("company_candidate_matches")
+      .select("candidate_user_id,shared_profile_payload")
+      .eq("match_id", input.matchId)
+      .maybeSingle();
+    const matchRow = matchResult.error
+      ? null
+      : (matchResult.data as Record<string, unknown> | null);
+    const candidateUserId = readString(matchRow?.candidate_user_id);
+    if (!candidateUserId) {
+      return;
+    }
+
+    const profilePayload = isRecord(matchRow?.shared_profile_payload)
+      ? matchRow.shared_profile_payload
+      : {};
+    const [userResult, progressResult] = await Promise.all([
+      adminClient.auth.admin.getUserById(candidateUserId),
+      adminClient
+        .from("candidate_interview_progress")
+        .select("interview_language")
+        .eq("user_id", candidateUserId)
+        .maybeSingle()
+    ]);
+    const candidateEmail = userResult.error ? null : userResult.data.user?.email;
+    if (!candidateEmail) {
+      return;
+    }
+
+    const verdictByAction: Record<CompanyMatchDecisionAction, MatchVerdict> = {
+      advance: "advanced",
+      hold: "hold",
+      decline: "declined"
+    };
+    const rendered = candidateVerdictNotificationEmail({
+      language: resolveEmailTemplateLanguage(
+        (progressResult.data as Record<string, unknown> | null)?.interview_language
+      ),
+      verdict: verdictByAction[input.action],
+      companyName: readString(profilePayload.companyName) ?? "the company",
+      roleTitle: readString(profilePayload.roleTitle) ?? "the role"
+    });
+    const sent = await resolveEmailProvider().send({
+      to: candidateEmail,
+      subject: rendered.subject,
+      text: rendered.text
+    });
+    if (!sent.ok) {
+      logWarn("candidate_verdict_notification_failed", {
+        matchId: input.matchId,
+        detail: sent.error
+      });
+    }
+  } catch (error) {
+    logWarn("match_verdict_sla_failed", {
+      matchId: input.matchId,
+      detail: error instanceof Error ? error.message : "unknown_error"
+    });
+  }
 }
 
 export async function readCompanyDashboard(
@@ -1124,6 +1296,75 @@ export async function readCompanyMatchForReview(
   }
 
   return mapCompanyMatchRow(result.data as Record<string, unknown>);
+}
+
+export type MatchIntegritySummary = {
+  readonly moduleId: string;
+  readonly summary: ModuleIntegritySummary;
+  /** Neutral, factual highlights ("3 tab switches, 1 long pause"). */
+  readonly highlights: readonly string[];
+};
+
+/**
+ * Read-only integrity context for a consent-approved match. Signals are
+ * surfaced verbatim for the human reviewer and are NEVER an input to any
+ * score computation. Only callable for matches the candidate already accepted
+ * (the review page gate); raw signals stay service-role.
+ */
+export async function readIntegritySummariesForMatch(
+  match: CompanyDashboardMatch
+): Promise<readonly MatchIntegritySummary[]> {
+  const consentApprovedStatuses: readonly CompanyMatchStatus[] = [
+    "candidate_accepted",
+    "company_advanced",
+    "company_hold",
+    "company_declined"
+  ];
+  if (!consentApprovedStatuses.includes(match.status)) {
+    return [];
+  }
+
+  let adminClient: SupabaseWriteClient;
+  try {
+    adminClient = createAdminClient();
+  } catch {
+    return [];
+  }
+
+  const result = await adminClient
+    .from("candidate_module_sessions")
+    .select("interview_session_id,module_id,module_payload,updated_at")
+    .eq("user_id", match.candidateUserId)
+    .order("updated_at", { ascending: false });
+  if (result.error || !result.data) {
+    return [];
+  }
+
+  const rows = asRows(result.data);
+  const latestSessionId = readString(rows[0]?.interview_session_id);
+  if (!latestSessionId) {
+    return [];
+  }
+
+  const summaries: MatchIntegritySummary[] = [];
+  for (const row of rows) {
+    if (readString(row.interview_session_id) !== latestSessionId) {
+      continue;
+    }
+    const payload = isRecord(row.module_payload) ? row.module_payload : {};
+    const moduleSession = isRecord(payload.module) ? payload.module : {};
+    const summary = readModuleIntegritySummary(moduleSession.integritySummary);
+    if (!summary || summary.turnsObserved === 0) {
+      continue;
+    }
+    summaries.push({
+      moduleId: readString(row.module_id) ?? "module",
+      summary,
+      highlights: integritySummaryHighlights(summary)
+    });
+  }
+
+  return summaries;
 }
 
 export async function readCandidateMatchFeedback(

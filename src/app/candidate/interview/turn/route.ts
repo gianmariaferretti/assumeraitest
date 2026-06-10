@@ -126,7 +126,8 @@ export async function POST(request: NextRequest) {
     activeTurnId: moduleRow.activeTurnId,
     turnStartedAt: moduleRow.turnStartedAt,
     turnCount: moduleRow.turnCount,
-    submittedTurnStatus
+    submittedTurnStatus,
+    integritySignals: parsed.value.integritySignals
   });
 
   if (result.kind === "rejected") {
@@ -184,6 +185,19 @@ export async function POST(request: NextRequest) {
       result.session.sessionId,
       result.nextTurn
     );
+  }
+
+  // Persist the per-turn honest signals (service-role write; reviewer context
+  // only, never a score input).
+  if (result.kind === "turn_completed") {
+    await store.recordIntegritySignals(candidateContext.candidateId, {
+      interviewSessionId: result.session.sessionId,
+      moduleId: parsed.value.moduleId,
+      turnId: parsed.value.turnId,
+      questionId: result.answeredQuestion.id,
+      signals: result.integritySignals,
+      responseLatencySeconds: result.responseLatencySeconds
+    });
   }
 
   // Keep the aggregate snapshot + candidate progress in sync, server-derived.

@@ -7,6 +7,11 @@ import type { EnsembleEvaluatorOptions } from "../scoring/bars/ensemble-evaluato
 import type { InterviewerAgentOptions } from "./interviewer-agent";
 import { competencyForModule } from "./module-competencies";
 import {
+  accumulateIntegritySummary,
+  parseTurnIntegritySignals,
+  type TurnIntegritySignals
+} from "./integrity-signals";
+import {
   appendFollowUpQuestionForModule,
   computeGlobalStatus,
   recordResponseForModule,
@@ -65,6 +70,11 @@ export interface ServerTurnRequest {
   readonly moduleId: string;
   readonly turnId: string;
   readonly candidateAnswer: { readonly answerText: string };
+  /**
+   * Optional honest behavioral counters for the turn (tab switches, blur,
+   * paste, audio gaps). Validated and clamped; never affects any score.
+   */
+  readonly integritySignals?: TurnIntegritySignals;
 }
 
 export type ParseServerTurnRequestResult =
@@ -134,7 +144,13 @@ export function parseServerTurnRequestBody(payload: unknown): ParseServerTurnReq
     };
   }
 
-  return { ok: true, value: { moduleId, turnId, candidateAnswer: { answerText } } };
+  // Malformed signals never block the turn: they simply aren't recorded.
+  const integritySignals = parseTurnIntegritySignals(payload.integritySignals);
+
+  return {
+    ok: true,
+    value: { moduleId, turnId, candidateAnswer: { answerText }, integritySignals }
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -417,6 +433,8 @@ export interface ConductServerTurnInput {
   readonly turnCount: number;
   /** Ledger status of the submitted turn id, when known. */
   readonly submittedTurnStatus?: "issued" | "evaluated" | "expired";
+  /** Validated honest signals for this turn; never affects any score. */
+  readonly integritySignals?: TurnIntegritySignals;
   readonly now?: string;
   readonly evaluatorOptions?: EnsembleEvaluatorOptions;
   readonly interviewerOptions?: InterviewerAgentOptions;
@@ -451,6 +469,9 @@ export type ConductServerTurnResult =
       readonly nextModuleId?: string;
       readonly nextTurn?: IssuedTurn;
       readonly turnCount: number;
+      /** Signals recorded for this turn (clamped) + server-derived latency. */
+      readonly integritySignals?: TurnIntegritySignals;
+      readonly responseLatencySeconds: number;
     };
 
 export async function conductServerTurn(
@@ -586,6 +607,24 @@ export async function conductServerTurn(
       ) ?? session;
   }
 
+  // Fold the turn's honest signals into the module's read-only integrity
+  // summary. This happens strictly AFTER scoring: the evaluation above never
+  // sees integrity data, by construction.
+  const moduleForIntegrity = session.module_sessions[input.moduleId];
+  session = {
+    ...session,
+    module_sessions: {
+      ...session.module_sessions,
+      [input.moduleId]: {
+        ...moduleForIntegrity,
+        integritySummary: accumulateIntegritySummary(moduleForIntegrity.integritySummary, {
+          signals: input.integritySignals,
+          responseLatencySeconds: elapsedSecondsForTurn
+        })
+      }
+    }
+  };
+
   const moduleCompleted = session.module_sessions[input.moduleId].state === "completed";
   let nextModuleId: string | undefined;
   let nextTurn: IssuedTurn | undefined;
@@ -613,7 +652,9 @@ export async function conductServerTurn(
     moduleCompleted,
     nextModuleId,
     nextTurn,
-    turnCount: input.turnCount + 1
+    turnCount: input.turnCount + 1,
+    integritySignals: input.integritySignals,
+    responseLatencySeconds: elapsedSecondsForTurn
   };
 }
 

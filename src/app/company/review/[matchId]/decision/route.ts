@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   isCompanyContextError,
   recordCompanyMatchDecision,
+  recordMatchVerdictAndNotify,
   resolveCompanyRouteContext
 } from "@/features/company-workspace";
 
@@ -162,6 +163,13 @@ export async function POST(
       }
     });
   }
+
+  // Stamp the 14-day SLA verdict and notify the candidate (non-fatal).
+  await recordMatchVerdictAndNotify({
+    matchId,
+    action,
+    decidedAt: decision.decidedAt
+  });
 
   return respondToDecisionRequest(request, {
     status: 201,

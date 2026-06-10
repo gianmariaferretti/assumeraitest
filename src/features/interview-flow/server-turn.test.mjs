@@ -122,6 +122,7 @@ test("a minimal well-formed turn body parses", () => {
     moduleId: "motivation",
     turnId: "turn_x",
     candidateAnswer: { answerText: "hello" },
+    integritySignals: undefined,
   });
 });
 

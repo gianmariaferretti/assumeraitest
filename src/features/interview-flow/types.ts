@@ -1,6 +1,7 @@
 import type { CandidateProfile } from "../resume-parsing";
 import type { CandidateInterviewLanguageCode } from "./interview-language";
 import type { FunnelState } from "./funnel-state-machine";
+import type { ModuleIntegritySummary } from "./integrity-signals";
 
 export type ModuleId = "motivation" | "language" | "domain" | "work_sample" | "case";
 
@@ -142,6 +143,11 @@ export interface ModuleSession {
   funnelState: FunnelState;
   startedAt?: string;
   completedAt?: string;
+  /**
+   * Read-only context for human reviewers (tab switches, pauses, paste
+   * events). NEVER an input to any score computation.
+   */
+  integritySummary?: ModuleIntegritySummary;
 }
 
 export interface InterviewSession {

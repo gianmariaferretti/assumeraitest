@@ -6,6 +6,7 @@ import {
   type IssuedTurn,
   type PersistedModuleSessionRow
 } from "@/features/interview-flow/server-turn";
+import type { TurnIntegritySignals } from "@/features/interview-flow/integrity-signals";
 import {
   createInterviewSession,
   type CandidateInterviewLanguageCode,
@@ -59,6 +60,18 @@ export interface ServerInterviewStore {
     turnId: string,
     evaluatedAt: string,
     status?: Extract<TurnLedgerStatus, "evaluated" | "expired">
+  ): Promise<CandidatePersistenceResult>;
+  /** Persist one turn's honest integrity signals (service-role write only). */
+  recordIntegritySignals(
+    candidateId: string,
+    row: {
+      readonly interviewSessionId: string;
+      readonly moduleId: string;
+      readonly turnId: string;
+      readonly questionId: string | null;
+      readonly signals: TurnIntegritySignals | undefined;
+      readonly responseLatencySeconds: number;
+    }
   ): Promise<CandidatePersistenceResult>;
 }
 
@@ -301,6 +314,27 @@ export function createSupabaseServerInterviewStore(admin: AdminClient): ServerIn
           .eq("interview_session_id", interviewSessionId)
           .eq("turn_id", turnId)
       );
+    },
+
+    async recordIntegritySignals(candidateId, row) {
+      return runWrite(
+        admin.from("integrity_signals").upsert(
+          {
+            user_id: candidateId,
+            interview_session_id: row.interviewSessionId,
+            module_id: row.moduleId,
+            turn_id: row.turnId,
+            question_id: row.questionId,
+            tab_hidden_count: row.signals?.tabHiddenCount ?? 0,
+            window_blur_count: row.signals?.windowBlurCount ?? 0,
+            paste_count: row.signals?.pasteCount ?? 0,
+            audio_gap_count: row.signals?.audioGapCount ?? 0,
+            max_audio_gap_seconds: row.signals?.maxAudioGapSeconds ?? 0,
+            response_latency_seconds: row.responseLatencySeconds
+          },
+          { onConflict: "user_id,interview_session_id,turn_id", ignoreDuplicates: true }
+        )
+      );
     }
   };
 }
@@ -405,6 +439,12 @@ export function createInMemoryServerInterviewStore(): ServerInterviewStore {
 
     async markTurnEvaluated(candidateId, interviewSessionId, turnId, _evaluatedAt, status) {
       memoryFor(candidateId).turns.set(`${interviewSessionId}:${turnId}`, status ?? "evaluated");
+      return { status: "local_fallback" };
+    },
+
+    async recordIntegritySignals() {
+      // The in-memory store keeps the integrity summary on the module payload
+      // only; per-turn rows exist in Postgres.
       return { status: "local_fallback" };
     }
   };

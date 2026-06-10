@@ -124,6 +124,31 @@ session state. A request that includes session/state fields is rejected with
   human review; the match guard blocks (never silently rejects) until required
   modules are complete.
 
+## Integrity signals (anti-cheating v1 — honest signals only)
+
+During the interview the client reports coarse, neutral counters per turn:
+tab `visibilitychange` events, window blur/focus changes, paste events, and
+audio continuity gaps from the transcription stream; the server adds the
+response latency it derived itself (`turn_started_at` → answer). **No
+keystroke logging, no camera analysis, no biometrics** — the same philosophy
+enforced by `interview-flow/safety.ts`.
+
+- Per-turn rows live in `integrity_signals`
+  (`20260609150000_integrity_signals.sql`): service-role write only after
+  server-side validation/clamping; a candidate can read their own rows and
+  never anyone else's.
+- A per-module `integritySummary` (counts, max gap, descriptive anomaly
+  flags) is computed server-side in `interview-flow/integrity-signals.ts` and
+  stored on the module session payload.
+- The company review page surfaces the summary **read-only** with neutral
+  wording ("3 tab switches, 1 long pause") for consent-approved matches only.
+
+**Hard rule: integrity data is context for the human reviewer and is NEVER an
+input to any score computation.** Nothing under `src/features/scoring/`
+imports the integrity module; the summary is folded into the session strictly
+after the evaluator has run, and removing it changes no score. A flagged
+module means "look closer", never "score lower".
+
 ## Scoring rigor
 
 Five capabilities take scoring from "solid MVP" to "enterprise-grade defensible",
