@@ -1,0 +1,992 @@
+{
+  "full_accepted": {
+    "match_id": "match_fixture_full",
+    "candidate_id": "cand_fixture_1",
+    "role_id": "role_fixture_sdr",
+    "company_id": "company_fixture_1",
+    "status": "candidate_accepted",
+    "match_score": 81,
+    "match_confidence": 80,
+    "overall_match": {
+      "score": 81,
+      "confidence": 80,
+      "evidence": [
+        "Matched required skills: outbound, qualification.",
+        "Matched nice-to-have skills: crm, salesforce.",
+        "Built a three-touch sequence",
+        "MEDDIC qualification notes",
+        "Two SaaS sales roles",
+        "Clear role motivation",
+        "Solid outbound process",
+        "English meets B2 requirement using C1 evidence."
+      ],
+      "missing_data": [
+        "Pricing depth",
+        "Company enrichment is unavailable; company context needs review."
+      ],
+      "version": "company-matching-v0",
+      "generated_at": "2026-06-09T12:00:00.000Z",
+      "reviewed_by_human": false,
+      "human_override": null,
+      "audit_event_id": "audit_match_fixture_full"
+    },
+    "evidence": [
+      "Matched required skills: outbound, qualification.",
+      "Matched nice-to-have skills: crm, salesforce.",
+      "Built a three-touch sequence",
+      "MEDDIC qualification notes",
+      "Two SaaS sales roles",
+      "Clear role motivation",
+      "Solid outbound process",
+      "English meets B2 requirement using C1 evidence."
+    ],
+    "missing_data": [
+      "Pricing depth",
+      "Company enrichment is unavailable; company context needs review."
+    ],
+    "dimensions": {
+      "RoleSkillFit": {
+        "score": 81,
+        "confidence": 90,
+        "evidence": [
+          "Matched required skills: outbound, qualification.",
+          "Matched nice-to-have skills: crm, salesforce.",
+          "Built a three-touch sequence",
+          "MEDDIC qualification notes"
+        ],
+        "missing_data": [],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_full"
+      },
+      "ExperienceDomainFit": {
+        "score": 74,
+        "confidence": 72,
+        "evidence": [
+          "Two SaaS sales roles"
+        ],
+        "missing_data": [],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_full"
+      },
+      "InterviewEvidenceFit": {
+        "score": 72,
+        "confidence": 70,
+        "evidence": [
+          "Clear role motivation",
+          "Solid outbound process"
+        ],
+        "missing_data": [
+          "Pricing depth"
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_full"
+      },
+      "LanguageLocationAvailabilityFit": {
+        "score": 90,
+        "confidence": 85,
+        "evidence": [
+          "English meets B2 requirement using C1 evidence.",
+          "Assessed in interview",
+          "Candidate location preferences overlap role constraints.",
+          "Candidate work-mode preferences overlap role work modes."
+        ],
+        "missing_data": [],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_full"
+      },
+      "CandidatePreferenceFit": {
+        "score": 100,
+        "confidence": 80,
+        "evidence": [
+          "Candidate target roles overlap this role.",
+          "Candidate location preferences overlap this role.",
+          "Candidate work-mode preferences overlap this role.",
+          "Candidate company-size preference overlaps this company.",
+          "Candidate industry preference overlaps this company."
+        ],
+        "missing_data": [
+          "Company enrichment is unavailable; company context needs review."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_full"
+      },
+      "CompanyBarFit": {
+        "score": 79,
+        "confidence": 75,
+        "evidence": [
+          "Compared available candidate evidence with role calibration calibration-v1."
+        ],
+        "missing_data": [],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_full"
+      },
+      "GrowthPotentialFit": {
+        "score": 78,
+        "confidence": 90,
+        "evidence": [
+          "Booked 14 meetings in one quarter",
+          "30% reply-rate lift",
+          "120% quota attainment"
+        ],
+        "missing_data": [],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_full"
+      },
+      "EducationCredentialFit": {
+        "score": 76,
+        "confidence": 75,
+        "evidence": [
+          "MSc",
+          "Computer Science",
+          "Thesis on streaming pipelines",
+          "Governed ranking snapshot"
+        ],
+        "missing_data": [],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_full"
+      },
+      "MatchConfidence": {
+        "score": 81,
+        "confidence": 81,
+        "evidence": [
+          "Parser confidence 82.",
+          "Role calibration calibration-v1 is present."
+        ],
+        "missing_data": [],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_full"
+      }
+    },
+    "hard_gates": [
+      {
+        "gate_type": "required_modules",
+        "passed": true,
+        "role_essential": true,
+        "explanation": "All required interview modules are complete; the match can proceed to scoring."
+      },
+      {
+        "gate_type": "language",
+        "passed": true,
+        "role_essential": true,
+        "explanation": "English B2 for client communication is currently supported by candidate language evidence."
+      },
+      {
+        "gate_type": "work_authorization",
+        "passed": true,
+        "role_essential": true,
+        "explanation": "EU work authorization has candidate-provided affirmative work authorization evidence."
+      }
+    ],
+    "explanations": {
+      "candidate_facing": {
+        "summary": "This is a 81/100 match for Sales Development Representative with 80/100 confidence.",
+        "supporting_evidence": [
+          "Matched required skills: outbound, qualification.",
+          "Matched nice-to-have skills: crm, salesforce.",
+          "Built a three-touch sequence",
+          "MEDDIC qualification notes",
+          "Two SaaS sales roles",
+          "Clear role motivation",
+          "Solid outbound process",
+          "English meets B2 requirement using C1 evidence."
+        ],
+        "missing_evidence": [
+          "Pricing depth",
+          "Company enrichment is unavailable; company context needs review."
+        ],
+        "risks_uncertainties": [
+          "Human review required because evidence or confidence is incomplete."
+        ],
+        "suggested_next_step": "Candidate can review the explanation and decide whether to share this match with the employer."
+      },
+      "employer_facing": {
+        "summary": "Candidate accepted sharing for Sales Development Representative. Match score is 81/100 with 80/100 confidence and requires meaningful human review.",
+        "supporting_evidence": [
+          "Matched required skills: outbound, qualification.",
+          "Matched nice-to-have skills: crm, salesforce.",
+          "Built a three-touch sequence",
+          "MEDDIC qualification notes",
+          "Two SaaS sales roles",
+          "Clear role motivation",
+          "Solid outbound process",
+          "English meets B2 requirement using C1 evidence."
+        ],
+        "missing_evidence": [
+          "Pricing depth",
+          "Company enrichment is unavailable; company context needs review."
+        ],
+        "risks_uncertainties": [
+          "Human review required because evidence or confidence is incomplete."
+        ],
+        "suggested_next_step": "Employer reviewer should inspect the evidence, gaps, consent record, and hard-gate outcomes before any hiring decision."
+      }
+    },
+    "candidate_decision": {
+      "decision": "accepted",
+      "decided_at": "2026-06-09T11:00:00.000Z",
+      "consent_record_id": "consent_fixture_1",
+      "audit_event_id": "audit_decision_fixture_1"
+    },
+    "employer_visibility": {
+      "state": "shared_after_candidate_consent",
+      "candidate_consent_required": true,
+      "visible_to_company": true,
+      "consent_record_id": "consent_fixture_1",
+      "candidate_sharing_snapshot_id": "snapshot_match_fixture_full"
+    },
+    "human_review_required": true,
+    "version": "company-matching-v0",
+    "model_version": "deterministic-matching-v0",
+    "scoring_version": "company-matching-v0",
+    "input_hash": "input_fixture_full",
+    "generated_at": "2026-06-09T12:00:00.000Z",
+    "reviewed_by_human": false,
+    "human_override": null,
+    "audit_event_id": "audit_match_fixture_full",
+    "decision_policy": {
+      "recommendation_only": true,
+      "requires_meaningful_human_review": true,
+      "no_hidden_automated_rejection": true
+    }
+  },
+  "blocked_modules": {
+    "match_id": "match_fixture_blocked",
+    "candidate_id": "cand_fixture_1",
+    "role_id": "role_fixture_sdr",
+    "company_id": "company_fixture_1",
+    "status": "candidate_visible",
+    "match_score": 0,
+    "match_confidence": 0,
+    "overall_match": {
+      "score": 0,
+      "confidence": 0,
+      "evidence": [],
+      "missing_data": [
+        "Required interview modules are not yet complete: domain. This is a process gate, not a candidate quality score; the match opens once they are finished."
+      ],
+      "version": "company-matching-v0",
+      "generated_at": "2026-06-09T12:00:00.000Z",
+      "reviewed_by_human": false,
+      "human_override": null,
+      "audit_event_id": "audit_match_fixture_blocked"
+    },
+    "evidence": [],
+    "missing_data": [
+      "Required interview modules are not yet complete: domain. This is a process gate, not a candidate quality score; the match opens once they are finished."
+    ],
+    "dimensions": {
+      "RoleSkillFit": {
+        "score": 0,
+        "confidence": 0,
+        "evidence": [],
+        "missing_data": [
+          "Match blocked before scoring: required interview modules are incomplete."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_blocked"
+      },
+      "ExperienceDomainFit": {
+        "score": 0,
+        "confidence": 0,
+        "evidence": [],
+        "missing_data": [
+          "Match blocked before scoring: required interview modules are incomplete."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_blocked"
+      },
+      "InterviewEvidenceFit": {
+        "score": 0,
+        "confidence": 0,
+        "evidence": [],
+        "missing_data": [
+          "Match blocked before scoring: required interview modules are incomplete."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_blocked"
+      },
+      "LanguageLocationAvailabilityFit": {
+        "score": 0,
+        "confidence": 0,
+        "evidence": [],
+        "missing_data": [
+          "Match blocked before scoring: required interview modules are incomplete."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_blocked"
+      },
+      "CandidatePreferenceFit": {
+        "score": 0,
+        "confidence": 0,
+        "evidence": [],
+        "missing_data": [
+          "Match blocked before scoring: required interview modules are incomplete."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_blocked"
+      },
+      "CompanyBarFit": {
+        "score": 0,
+        "confidence": 0,
+        "evidence": [],
+        "missing_data": [
+          "Match blocked before scoring: required interview modules are incomplete."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_blocked"
+      },
+      "GrowthPotentialFit": {
+        "score": 0,
+        "confidence": 0,
+        "evidence": [],
+        "missing_data": [
+          "Match blocked before scoring: required interview modules are incomplete."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_blocked"
+      },
+      "EducationCredentialFit": {
+        "score": 0,
+        "confidence": 0,
+        "evidence": [],
+        "missing_data": [
+          "Match blocked before scoring: required interview modules are incomplete."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_blocked"
+      },
+      "MatchConfidence": {
+        "score": 0,
+        "confidence": 0,
+        "evidence": [],
+        "missing_data": [
+          "Match blocked before scoring: required interview modules are incomplete."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_blocked"
+      }
+    },
+    "hard_gates": [
+      {
+        "gate_type": "required_modules",
+        "passed": false,
+        "role_essential": true,
+        "explanation": "Required interview modules are not yet complete: domain. This is a process gate, not a candidate quality score; the match opens once they are finished."
+      },
+      {
+        "gate_type": "language",
+        "passed": true,
+        "role_essential": true,
+        "explanation": "English B2 for client communication is currently supported by candidate language evidence."
+      },
+      {
+        "gate_type": "work_authorization",
+        "passed": true,
+        "role_essential": true,
+        "explanation": "EU work authorization has candidate-provided affirmative work authorization evidence."
+      }
+    ],
+    "explanations": {
+      "candidate_facing": {
+        "summary": "This match is on hold until you finish the required interview modules. It is not a rejection and not a score.",
+        "supporting_evidence": [],
+        "missing_evidence": [
+          "Required interview modules are not yet complete: domain. This is a process gate, not a candidate quality score; the match opens once they are finished."
+        ],
+        "risks_uncertainties": [
+          "Matching is intentionally paused until required modules are complete."
+        ],
+        "suggested_next_step": "Complete the remaining required interview modules to open this match."
+      }
+    },
+    "candidate_decision": null,
+    "employer_visibility": {
+      "state": "hidden_pending_candidate_consent",
+      "candidate_consent_required": true,
+      "visible_to_company": false,
+      "consent_record_id": null,
+      "candidate_sharing_snapshot_id": null
+    },
+    "human_review_required": true,
+    "match_blocked": true,
+    "version": "company-matching-v0",
+    "model_version": "deterministic-matching-v0",
+    "scoring_version": "company-matching-v0",
+    "input_hash": "input_fixture_blocked",
+    "generated_at": "2026-06-09T12:00:00.000Z",
+    "reviewed_by_human": false,
+    "human_override": null,
+    "audit_event_id": "audit_match_fixture_blocked",
+    "decision_policy": {
+      "recommendation_only": true,
+      "requires_meaningful_human_review": true,
+      "no_hidden_automated_rejection": true
+    }
+  },
+  "gate_failing_declined": {
+    "match_id": "match_fixture_gates",
+    "candidate_id": "cand_fixture_1",
+    "role_id": "role_fixture_sdr",
+    "company_id": "company_fixture_1",
+    "status": "candidate_declined",
+    "match_score": 75,
+    "match_confidence": 72,
+    "overall_match": {
+      "score": 75,
+      "confidence": 72,
+      "evidence": [
+        "Matched required skills: outbound, qualification.",
+        "Matched nice-to-have skills: crm, salesforce.",
+        "Built a three-touch sequence",
+        "MEDDIC qualification notes",
+        "Experience overlaps role signals: Sales Development Representative, sales, outbound, crm, salesforce.",
+        "Booked 14 meetings in one quarter",
+        "30% reply-rate lift",
+        "120% quota attainment"
+      ],
+      "missing_data": [
+        "Interview evidence is not available.",
+        "Assessed level for English is not available.",
+        "Company enrichment is unavailable; company context needs review.",
+        "Resume or interview scorecard evidence is incomplete.",
+        "Credential evidence missing: MEDDIC Certification.",
+        "English B2 for client communication is not currently eligible: English B2 required, candidate evidence not found. This is not a candidate quality score.",
+        "EU work authorization is not currently eligible because affirmative work authorization evidence is missing. This is not a candidate quality score."
+      ],
+      "version": "company-matching-v0",
+      "generated_at": "2026-06-09T12:00:00.000Z",
+      "reviewed_by_human": false,
+      "human_override": null,
+      "audit_event_id": "audit_match_fixture_gates"
+    },
+    "evidence": [
+      "Matched required skills: outbound, qualification.",
+      "Matched nice-to-have skills: crm, salesforce.",
+      "Built a three-touch sequence",
+      "MEDDIC qualification notes",
+      "Experience overlaps role signals: Sales Development Representative, sales, outbound, crm, salesforce.",
+      "Booked 14 meetings in one quarter",
+      "30% reply-rate lift",
+      "120% quota attainment"
+    ],
+    "missing_data": [
+      "Interview evidence is not available.",
+      "Assessed level for English is not available.",
+      "Company enrichment is unavailable; company context needs review.",
+      "Resume or interview scorecard evidence is incomplete.",
+      "Credential evidence missing: MEDDIC Certification.",
+      "English B2 for client communication is not currently eligible: English B2 required, candidate evidence not found. This is not a candidate quality score.",
+      "EU work authorization is not currently eligible because affirmative work authorization evidence is missing. This is not a candidate quality score."
+    ],
+    "dimensions": {
+      "RoleSkillFit": {
+        "score": 100,
+        "confidence": 90,
+        "evidence": [
+          "Matched required skills: outbound, qualification.",
+          "Matched nice-to-have skills: crm, salesforce.",
+          "Built a three-touch sequence",
+          "MEDDIC qualification notes"
+        ],
+        "missing_data": [],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_gates"
+      },
+      "ExperienceDomainFit": {
+        "score": 79,
+        "confidence": 90,
+        "evidence": [
+          "Experience overlaps role signals: Sales Development Representative, sales, outbound, crm, salesforce.",
+          "Booked 14 meetings in one quarter",
+          "30% reply-rate lift",
+          "120% quota attainment"
+        ],
+        "missing_data": [],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_gates"
+      },
+      "InterviewEvidenceFit": {
+        "score": 40,
+        "confidence": 35,
+        "evidence": [],
+        "missing_data": [
+          "Interview evidence is not available."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_gates"
+      },
+      "LanguageLocationAvailabilityFit": {
+        "score": 45,
+        "confidence": 65,
+        "evidence": [
+          "Candidate location preferences overlap role constraints.",
+          "Candidate work-mode preferences overlap role work modes."
+        ],
+        "missing_data": [
+          "Assessed level for English is not available."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_gates"
+      },
+      "CandidatePreferenceFit": {
+        "score": 100,
+        "confidence": 80,
+        "evidence": [
+          "Candidate target roles overlap this role.",
+          "Candidate location preferences overlap this role.",
+          "Candidate work-mode preferences overlap this role.",
+          "Candidate company-size preference overlaps this company.",
+          "Candidate industry preference overlaps this company."
+        ],
+        "missing_data": [
+          "Company enrichment is unavailable; company context needs review."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_gates"
+      },
+      "CompanyBarFit": {
+        "score": 75,
+        "confidence": 55,
+        "evidence": [
+          "Compared available candidate evidence with role calibration calibration-v1."
+        ],
+        "missing_data": [
+          "Resume or interview scorecard evidence is incomplete."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_gates"
+      },
+      "GrowthPotentialFit": {
+        "score": 78,
+        "confidence": 90,
+        "evidence": [
+          "Booked 14 meetings in one quarter",
+          "30% reply-rate lift",
+          "120% quota attainment"
+        ],
+        "missing_data": [],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_gates"
+      },
+      "EducationCredentialFit": {
+        "score": 35,
+        "confidence": 75,
+        "evidence": [
+          "MSc",
+          "Computer Science",
+          "Thesis on streaming pipelines",
+          "Governed ranking snapshot"
+        ],
+        "missing_data": [
+          "Credential evidence missing: MEDDIC Certification."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_gates"
+      },
+      "MatchConfidence": {
+        "score": 65,
+        "confidence": 65,
+        "evidence": [
+          "Parser confidence 82.",
+          "Role calibration calibration-v1 is present."
+        ],
+        "missing_data": [
+          "Interview evidence is not available.",
+          "English B2 for client communication is not currently eligible: English B2 required, candidate evidence not found. This is not a candidate quality score.",
+          "EU work authorization is not currently eligible because affirmative work authorization evidence is missing. This is not a candidate quality score."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_gates"
+      }
+    },
+    "hard_gates": [
+      {
+        "gate_type": "required_modules",
+        "passed": true,
+        "role_essential": true,
+        "explanation": "All required interview modules are complete; the match can proceed to scoring."
+      },
+      {
+        "gate_type": "language",
+        "passed": false,
+        "role_essential": true,
+        "explanation": "English B2 for client communication is not currently eligible: English B2 required, candidate evidence not found. This is not a candidate quality score."
+      },
+      {
+        "gate_type": "work_authorization",
+        "passed": false,
+        "role_essential": true,
+        "explanation": "EU work authorization is not currently eligible because affirmative work authorization evidence is missing. This is not a candidate quality score."
+      }
+    ],
+    "explanations": {
+      "candidate_facing": {
+        "summary": "This role is not currently eligible because a role-essential hard gate is unmet. The 75/100 match signal remains decision support, not a candidate quality judgment.",
+        "supporting_evidence": [
+          "Matched required skills: outbound, qualification.",
+          "Matched nice-to-have skills: crm, salesforce.",
+          "Built a three-touch sequence",
+          "MEDDIC qualification notes",
+          "Experience overlaps role signals: Sales Development Representative, sales, outbound, crm, salesforce.",
+          "Booked 14 meetings in one quarter",
+          "30% reply-rate lift",
+          "120% quota attainment"
+        ],
+        "missing_evidence": [
+          "Interview evidence is not available.",
+          "Assessed level for English is not available.",
+          "Company enrichment is unavailable; company context needs review.",
+          "Resume or interview scorecard evidence is incomplete.",
+          "Credential evidence missing: MEDDIC Certification.",
+          "English B2 for client communication is not currently eligible: English B2 required, candidate evidence not found. This is not a candidate quality score.",
+          "EU work authorization is not currently eligible because affirmative work authorization evidence is missing. This is not a candidate quality score."
+        ],
+        "risks_uncertainties": [
+          "Human review required because evidence or confidence is incomplete.",
+          "Role-essential hard gate failure requires eligibility review."
+        ],
+        "suggested_next_step": "Review eligibility evidence with the candidate before any employer sharing or human review step."
+      }
+    },
+    "candidate_decision": {
+      "decision": "declined",
+      "decided_at": "2026-06-09T11:30:00.000Z",
+      "consent_record_id": null,
+      "audit_event_id": "audit_decision_fixture_declined"
+    },
+    "employer_visibility": {
+      "state": "candidate_declined",
+      "candidate_consent_required": true,
+      "visible_to_company": false,
+      "consent_record_id": null,
+      "candidate_sharing_snapshot_id": null
+    },
+    "human_review_required": true,
+    "version": "company-matching-v0",
+    "model_version": "deterministic-matching-v0",
+    "scoring_version": "company-matching-v0",
+    "input_hash": "input_fixture_gates",
+    "generated_at": "2026-06-09T12:00:00.000Z",
+    "reviewed_by_human": false,
+    "human_override": null,
+    "audit_event_id": "audit_match_fixture_gates",
+    "decision_policy": {
+      "recommendation_only": true,
+      "requires_meaningful_human_review": true,
+      "no_hidden_automated_rejection": true
+    }
+  },
+  "minimal": {
+    "match_id": "match_fixture_min",
+    "candidate_id": "cand_fixture_min",
+    "role_id": "role_fixture_min",
+    "company_id": "company_fixture_min",
+    "status": "candidate_visible",
+    "match_score": 31,
+    "match_confidence": 60,
+    "overall_match": {
+      "score": 31,
+      "confidence": 60,
+      "evidence": [
+        "No required-skill evidence matched the role.",
+        "No role-essential language requirement configured.",
+        "Compared available candidate evidence with role calibration calibration-min.",
+        "Parser confidence 60.",
+        "Role calibration calibration-min is present."
+      ],
+      "missing_data": [
+        "Required skill evidence missing: excel.",
+        "Role-domain evidence is limited.",
+        "Interview evidence is not available.",
+        "Location overlap evidence is incomplete.",
+        "Work-mode overlap evidence is incomplete.",
+        "Target-role preference overlap is limited.",
+        "Company profile was not provided.",
+        "Resume or interview scorecard evidence is incomplete.",
+        "Measurable impact evidence is limited."
+      ],
+      "version": "company-matching-v0",
+      "generated_at": "2026-06-09T12:00:00.000Z",
+      "reviewed_by_human": false,
+      "human_override": null,
+      "audit_event_id": "audit_match_fixture_min"
+    },
+    "evidence": [
+      "No required-skill evidence matched the role.",
+      "No role-essential language requirement configured.",
+      "Compared available candidate evidence with role calibration calibration-min.",
+      "Parser confidence 60.",
+      "Role calibration calibration-min is present."
+    ],
+    "missing_data": [
+      "Required skill evidence missing: excel.",
+      "Role-domain evidence is limited.",
+      "Interview evidence is not available.",
+      "Location overlap evidence is incomplete.",
+      "Work-mode overlap evidence is incomplete.",
+      "Target-role preference overlap is limited.",
+      "Company profile was not provided.",
+      "Resume or interview scorecard evidence is incomplete.",
+      "Measurable impact evidence is limited."
+    ],
+    "dimensions": {
+      "RoleSkillFit": {
+        "score": 15,
+        "confidence": 55,
+        "evidence": [
+          "No required-skill evidence matched the role."
+        ],
+        "missing_data": [
+          "Required skill evidence missing: excel."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_min"
+      },
+      "ExperienceDomainFit": {
+        "score": 30,
+        "confidence": 55,
+        "evidence": [],
+        "missing_data": [
+          "Role-domain evidence is limited."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_min"
+      },
+      "InterviewEvidenceFit": {
+        "score": 40,
+        "confidence": 35,
+        "evidence": [],
+        "missing_data": [
+          "Interview evidence is not available."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_min"
+      },
+      "LanguageLocationAvailabilityFit": {
+        "score": 57,
+        "confidence": 75,
+        "evidence": [
+          "No role-essential language requirement configured."
+        ],
+        "missing_data": [
+          "Location overlap evidence is incomplete.",
+          "Work-mode overlap evidence is incomplete."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_min"
+      },
+      "CandidatePreferenceFit": {
+        "score": 0,
+        "confidence": 80,
+        "evidence": [],
+        "missing_data": [
+          "Target-role preference overlap is limited.",
+          "Company profile was not provided."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_min"
+      },
+      "CompanyBarFit": {
+        "score": 27,
+        "confidence": 55,
+        "evidence": [
+          "Compared available candidate evidence with role calibration calibration-min."
+        ],
+        "missing_data": [
+          "Resume or interview scorecard evidence is incomplete."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_min"
+      },
+      "GrowthPotentialFit": {
+        "score": 36,
+        "confidence": 55,
+        "evidence": [],
+        "missing_data": [
+          "Measurable impact evidence is limited."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_min"
+      },
+      "EducationCredentialFit": {
+        "score": 70,
+        "confidence": 70,
+        "evidence": [],
+        "missing_data": [],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_min"
+      },
+      "MatchConfidence": {
+        "score": 63,
+        "confidence": 63,
+        "evidence": [
+          "Parser confidence 60.",
+          "Role calibration calibration-min is present."
+        ],
+        "missing_data": [
+          "Interview evidence is not available."
+        ],
+        "version": "company-matching-v0",
+        "generated_at": "2026-06-09T12:00:00.000Z",
+        "reviewed_by_human": false,
+        "human_override": null,
+        "audit_event_id": "audit_match_fixture_min"
+      }
+    },
+    "hard_gates": [],
+    "explanations": {
+      "candidate_facing": {
+        "summary": "This is a 31/100 match for Operations Analyst with 60/100 confidence.",
+        "supporting_evidence": [
+          "No required-skill evidence matched the role.",
+          "No role-essential language requirement configured.",
+          "Compared available candidate evidence with role calibration calibration-min.",
+          "Parser confidence 60.",
+          "Role calibration calibration-min is present."
+        ],
+        "missing_evidence": [
+          "Required skill evidence missing: excel.",
+          "Role-domain evidence is limited.",
+          "Interview evidence is not available.",
+          "Location overlap evidence is incomplete.",
+          "Work-mode overlap evidence is incomplete.",
+          "Target-role preference overlap is limited.",
+          "Company profile was not provided.",
+          "Resume or interview scorecard evidence is incomplete.",
+          "Measurable impact evidence is limited."
+        ],
+        "risks_uncertainties": [
+          "Human review required because evidence or confidence is incomplete."
+        ],
+        "suggested_next_step": "Candidate can review the explanation and decide whether to share this match with the employer."
+      }
+    },
+    "candidate_decision": null,
+    "employer_visibility": {
+      "state": "hidden_pending_candidate_consent",
+      "candidate_consent_required": true,
+      "visible_to_company": false,
+      "consent_record_id": null,
+      "candidate_sharing_snapshot_id": null
+    },
+    "human_review_required": true,
+    "version": "company-matching-v0",
+    "model_version": "deterministic-matching-v0",
+    "scoring_version": "company-matching-v0",
+    "input_hash": "input_fixture_min",
+    "generated_at": "2026-06-09T12:00:00.000Z",
+    "reviewed_by_human": false,
+    "human_override": null,
+    "audit_event_id": "audit_match_fixture_min",
+    "decision_policy": {
+      "recommendation_only": true,
+      "requires_meaningful_human_review": true,
+      "no_hidden_automated_rejection": true
+    }
+  }
+}
