@@ -1,3 +1,5 @@
+import type { DriverInsights } from "../scoring/job-drivers/insights";
+import type { DriverProfile, RoleDriverContext } from "../scoring/job-drivers/types";
 import type { WorkStyleKey, WorkStyleProfile } from "../scoring/work-style/types";
 import type { MatchDimensionName, MatchWeightSet } from "./weights";
 
@@ -137,6 +139,8 @@ export interface RoleProfile {
     interview_modules?: string[];
     /** Company-declared work-style expectations (Phase 13), versioned. */
     work_style_key?: WorkStyleKey;
+    /** Company-declared work-context reality (Phase 14, flag-only). */
+    driver_context?: RoleDriverContext;
     created_by?: string;
     created_at?: string;
     audit_event_id?: string;
@@ -244,6 +248,11 @@ export interface MatchingScoreInput {
   weightSet?: MatchWeightSet;
   /** Candidate's descriptive work-style profile (Phase 13). */
   workStyleProfile?: WorkStyleProfile;
+  /**
+   * Candidate's descriptive job-driver profile (Phase 14). FLAG-ONLY: feeds
+   * driver_insights (transparency flags + realistic preview), never a score.
+   */
+  driverProfile?: DriverProfile;
   generatedAt?: string;
   version?: string;
   auditEventId?: string;
@@ -320,6 +329,11 @@ export interface CompanyMatch {
   candidate_decision: CandidateDecision | null;
   employer_visibility: EmployerVisibility;
   human_review_required: boolean;
+  /**
+   * Flag-only driver insights (Phase 14): realistic job preview + discussion
+   * flags. Carries no score and contributes nothing to match_score.
+   */
+  driver_insights?: DriverInsights;
   /** True when the match is blocked before scoring (e.g. required modules incomplete). */
   match_blocked?: boolean;
   version: string;

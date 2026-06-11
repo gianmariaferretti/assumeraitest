@@ -25,7 +25,12 @@ export type CohortDimension =
   | "asr_confidence_band"
   // Phase 13: the values-alignment contribution is monitored as its own
   // dimension so declared work-style keys cannot become a hidden proxy.
-  | "values_alignment_band";
+  | "values_alignment_band"
+  // Phase 14: candidates whose interviews surfaced a lifestyle/balance driver
+  // signal must not show different decision rates — the lifestyle driver is a
+  // potential proxy for family status and caregiving (hence hard-coded
+  // flag-only in matching) and this cohort watches for leakage anyway.
+  | "lifestyle_driver_flag";
 
 export const COHORT_DIMENSIONS: readonly CohortDimension[] = [
   "role_family",
@@ -36,6 +41,7 @@ export const COHORT_DIMENSIONS: readonly CohortDimension[] = [
   "interview_mode",
   "asr_confidence_band",
   "values_alignment_band",
+  "lifestyle_driver_flag",
 ];
 
 export const FOUR_FIFTHS_THRESHOLD = 0.8;

@@ -5,6 +5,7 @@ import {
   resolveCompanyRouteContext,
   validateCompanyRoleIntake
 } from "@/features/company-workspace";
+import { readDriverContextFromFormData } from "@/features/scoring/job-drivers/form";
 import { readWorkStyleKeyFromFormData } from "@/features/scoring/work-style/form";
 
 export async function POST(request: NextRequest) {
@@ -68,6 +69,8 @@ export async function POST(request: NextRequest) {
   // Phase 13: company-declared work-style expectations, stored versioned
   // on the role calibration (judged at match time, never in the interview).
   const workStyleKey = readWorkStyleKeyFromFormData(formData);
+  // Phase 14: company-declared work-context reality (flag-only at match time).
+  const driverContext = readDriverContextFromFormData(formData);
   const now = new Date().toISOString();
   const roleId = `role_${sanitizeId(validation.value.title)}_${sanitizeId(now)}`;
   const result = await companyContext.supabase.from("company_roles").insert({
@@ -82,7 +85,8 @@ export async function POST(request: NextRequest) {
     daily_work_reality: validation.value.daily_work_reality,
     calibration: {
       ...validation.value.calibration,
-      ...(workStyleKey ? { work_style_key: workStyleKey } : {})
+      ...(workStyleKey ? { work_style_key: workStyleKey } : {}),
+      ...(driverContext ? { driver_context: driverContext } : {})
     },
     role_payload: validation.value,
     updated_at: now

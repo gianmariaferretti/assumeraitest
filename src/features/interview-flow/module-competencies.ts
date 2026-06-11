@@ -1,4 +1,5 @@
 import type { BarsCompetency } from "../scoring/bars/types";
+import { isAgilityQuestionId, type CanonicalSeniorityBand } from "./canonical-questions";
 import type { InterviewQuestion } from "./types";
 
 /**
@@ -110,6 +111,61 @@ const MODULE_COMPETENCIES: Record<string, BarsCompetency> = {
   }
 };
 
+export const LEARNING_AGILITY_COMPETENCY_ID = "learning_agility";
+
+/**
+ * Learning agility (Phase 15): how a candidate engages with genuinely new
+ * material — questions asked, structure imposed, hypotheses formed, updating
+ * on feedback. NO PENALTY FOR UNFAMILIARITY: the anchors score the learning
+ * PROCESS only; prior familiarity with a concept is never required, and
+ * admitting unfamiliarity before reasoning meets the bar, never lowers it.
+ * Delivered by the canonical_agility_* items (STAR + micro-learning task).
+ */
+const LEARNING_AGILITY_COMPETENCY: BarsCompetency = {
+  id: LEARNING_AGILITY_COMPETENCY_ID,
+  name: "Learning agility",
+  tier: 2,
+  description:
+    "Engages with genuinely new material: structures the unfamiliar, forms hypotheses, and updates on feedback. Scores the learning process only — prior familiarity with the concept is never required, and admitting unfamiliarity never lowers the score.",
+  sbiQuestions: [],
+  bars: anchors(
+    [
+      "bluffs familiarity instead of engaging with the new material",
+      "gives up without attempting to reason about the new idea"
+    ],
+    [
+      "engages honestly with the new idea and produces a workable application",
+      "admitting unfamiliarity and then reasoning through it meets this bar"
+    ],
+    [
+      "imposes structure on the unfamiliar: explicit assumptions, a hypothesis, and a check of their own answer"
+    ],
+    [
+      "transfers the new idea beyond the given example and refines the answer mid-response as understanding improves"
+    ]
+  ),
+  redFlags: [],
+  moduleId: "domain"
+};
+
+/**
+ * Seniority weighting for learning agility (Phase 15): agility predicts most
+ * where there is least track record, so it weighs more for juniors; for
+ * experienced profiles past behavior carries more of the evidence — but
+ * agility still counts and is never zeroed.
+ */
+export function learningAgilityWeightForSeniority(
+  band: CanonicalSeniorityBand | undefined
+): number {
+  if (band === "junior") {
+    return 1.25;
+  }
+  if (band === "experienced") {
+    return 0.85;
+  }
+  return 1;
+}
+
 const FALLBACK_COMPETENCY: BarsCompetency = {
   id: "general_role_evidence",
   name: "Role-relevant evidence",
@@ -134,7 +190,13 @@ export function competencyForModule(
   moduleId: string,
   question?: InterviewQuestion
 ): BarsCompetency {
-  const base = MODULE_COMPETENCIES[moduleId] ?? FALLBACK_COMPETENCY;
+  // Learning-agility items (Phase 15) carry their own competency regardless
+  // of the module they are delivered in: the anchors score the learning
+  // process, never the module's domain knowledge.
+  const base =
+    question && isAgilityQuestionId(question.id)
+      ? LEARNING_AGILITY_COMPETENCY
+      : MODULE_COMPETENCIES[moduleId] ?? FALLBACK_COMPETENCY;
   if (!question || question.rubric.length === 0) {
     return base;
   }

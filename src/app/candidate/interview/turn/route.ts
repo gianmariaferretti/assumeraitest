@@ -17,11 +17,17 @@ import {
 import {
   averageAsrConfidence,
   conductServerTurn,
+  isDriversQuestionId,
   isWorkStyleQuestionId,
   parseServerTurnRequestBody,
   readAsrThresholdFromEnv,
   shouldRouteForAsrReview
 } from "@/features/interview-flow";
+import {
+  evaluateJobDrivers,
+  mergeDriverProfiles
+} from "@/features/scoring/job-drivers/evaluator";
+import { readDriverProfile } from "@/features/scoring/job-drivers/types";
 import {
   evaluateWorkStyle,
   mergeWorkStyleProfiles
@@ -251,6 +257,33 @@ export async function POST(request: NextRequest) {
       );
     } catch (error) {
       logWarn("work_style_evaluation_failed", {
+        ...logContext,
+        detail: error instanceof Error ? error.message : "unknown_error"
+      });
+    }
+  }
+
+  // Job-driver items (Phase 14): descriptive revealed-preference extraction —
+  // flag-only by design, no score path exists for driver signals. Failures
+  // here never block the turn.
+  if (result.kind === "turn_completed" && isDriversQuestionId(result.answeredQuestion.id)) {
+    try {
+      const evaluation = await evaluateJobDrivers({
+        questionId: result.answeredQuestion.id,
+        questionText: result.answeredQuestion.prompt,
+        answerText: parsed.value.candidateAnswer.answerText
+      });
+      const existing = readDriverProfile(
+        await store.readDriverProfile(candidateContext.candidateId, result.session.sessionId)
+      );
+      const merged = mergeDriverProfiles(existing, evaluation);
+      await store.saveDriverProfile(
+        candidateContext.candidateId,
+        result.session.sessionId,
+        merged as unknown as Record<string, unknown>
+      );
+    } catch (error) {
+      logWarn("driver_evaluation_failed", {
         ...logContext,
         detail: error instanceof Error ? error.message : "unknown_error"
       });
