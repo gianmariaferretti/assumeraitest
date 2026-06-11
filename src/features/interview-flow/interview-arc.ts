@@ -1,4 +1,5 @@
 import {
+  agilityEntries,
   buildCanonicalQuestion,
   canonicalEntriesForStage,
   isCanonicalQuestionId,
@@ -8,6 +9,11 @@ import {
   type CanonicalLanguage,
   type CanonicalSeniorityBand
 } from "./canonical-questions";
+import {
+  MICRO_LEARNING_QUESTION_PREFIX,
+  microLearningQuestionId,
+  selectMicroLearningConceptId
+} from "./micro-learning";
 import type {
   InterviewArcStage,
   InterviewQuestion,
@@ -145,6 +151,17 @@ export function buildInterviewArcQuestions(input: BuildInterviewArcInput): Inter
   const jobDrivers = jobDriverEntries().map((entry) =>
     buildCanonicalQuestion(entry, language, input.roleFamily)
   );
+  // Learning agility (Phase 15): the STAR item always, plus exactly ONE
+  // micro-learning task chosen DETERMINISTICALLY from the curated concept
+  // bank — the same plan inputs always rebuild the same question.
+  const microTaskId = microLearningQuestionId(
+    selectMicroLearningConceptId(`${input.roleFamily}:${seniority ?? "any"}:${language}`)
+  );
+  const agility = agilityEntries()
+    .filter(
+      (entry) => !entry.id.startsWith(MICRO_LEARNING_QUESTION_PREFIX) || entry.id === microTaskId
+    )
+    .map((entry) => buildCanonicalQuestion(entry, language, input.roleFamily));
 
   return [
     ...canonical("opening"),
@@ -153,6 +170,7 @@ export function buildInterviewArcQuestions(input: BuildInterviewArcInput): Inter
     ...canonical("self_awareness"),
     ...behavioralCore,
     ...behavioralExtras,
+    ...agility,
     ...situational,
     ...situationalExtras,
     ...workStyle,

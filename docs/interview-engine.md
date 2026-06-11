@@ -68,6 +68,7 @@ EN/IT/FR/DE/ES):
 | b2. Job drivers (Phase 14) | rapport | `baseline_only` | Trade-off item + revealed-preference STAR ("a real fork in your path") — descriptive career-driver extraction, FLAG-ONLY at match time (realistic preview + discussion flags, never a score; lifestyle driver hard-coded never-compared) |
 | c. Self-awareness bridge | exploration | on-ramp `low_weight`, probe `full` | "Your main strengths?" + mandatory STAR probe — the classic question is the on-ramp, the follow-up carries the score |
 | d. Behavioral core | exploration/challenge | `full` | Existing STAR items in natural recruiter language; mandatory failure/rejection item for sales |
+| d2. Learning agility (Phase 15) | challenge | `full` | STAR learning episode + ONE micro-learning task (deterministic pick from a curated, fully-in-prompt concept bank) — dedicated `learning_agility` BARS competency scoring the learning PROCESS; no penalty for unfamiliarity; seniority-weighted (more for juniors, never zeroed) |
 | e. Situational | challenge | `full` | One generic role-family scenario (never branded with a client company) |
 | e2. Work-style SJT (Phase 13) | challenge | `baseline_only` | Two dilemmas with NO right answer — descriptive style classification only; judged per-company at match time against declared keys |
 | f. Closing | closing | `baseline_only` | "Anything to add?" + accurate next steps (profile review → matching → 14-day verdict); candidate questions recorded as a light curiosity signal, never a hard score |

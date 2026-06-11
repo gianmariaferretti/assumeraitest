@@ -37,6 +37,11 @@ export interface ModuleWeight {
 export interface CompetencyScore {
   readonly competency_id: string;
   readonly tier?: CompetencyTier;
+  /**
+   * Relative weight of this competency within its module (default 1). Used by
+   * the Phase 15 seniority weighting of learning agility; never zero.
+   */
+  readonly weight?: number;
   readonly bars_score: number; // weighted mean across that competency's answers, 1-10
   readonly bars_level: BarsLevel;
   readonly answers_evaluated: number;
@@ -91,6 +96,8 @@ export interface Scorecard {
 
 export interface CompetencyMeta {
   readonly tier?: CompetencyTier;
+  /** Relative module-level weight for this competency (default 1). */
+  readonly weight?: number;
 }
 
 /**
@@ -157,9 +164,13 @@ export function assessCompetencyScores(
       })),
     );
 
+    const metaWeight = metaByCompetency[competencyId]?.weight;
+
     return {
       competency_id: competencyId,
       tier: metaByCompetency[competencyId]?.tier,
+      // Spread keeps the key absent (not undefined) when no weight is set.
+      ...(metaWeight !== undefined ? { weight: metaWeight } : {}),
       bars_score: score,
       bars_level: barsLevelForScore(score),
       answers_evaluated: runs.length,
@@ -191,10 +202,12 @@ export function assessModuleScore(
     };
   }
 
+  // Confidence-weighted mean, scaled by the optional per-competency weight
+  // (Phase 15: learning agility weighs by seniority — more for juniors).
   const weighted = weightedMean(
     competencyScores.map((competency) => ({
       value: competency.bars_score,
-      weight: Math.max(0.1, competency.confidence),
+      weight: Math.max(0.1, competency.confidence) * (competency.weight ?? 1),
     })),
   );
   const score = clampScore(weighted);
@@ -207,7 +220,7 @@ export function assessModuleScore(
   const scoreInterval = bootstrapWeightedMean(
     competencyScores.map((competency) => ({
       value: competency.bars_score,
-      weight: Math.max(0.1, competency.confidence),
+      weight: Math.max(0.1, competency.confidence) * (competency.weight ?? 1),
     })),
   );
 

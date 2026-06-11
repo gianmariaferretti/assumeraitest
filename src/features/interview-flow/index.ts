@@ -73,8 +73,17 @@ export {
 } from "./server-turn";
 export {
   competencyForModule,
+  LEARNING_AGILITY_COMPETENCY_ID,
+  learningAgilityWeightForSeniority,
   MODULE_COMPETENCY_VERSION
 } from "./module-competencies";
+export {
+  MICRO_LEARNING_CONCEPT_IDS,
+  MICRO_LEARNING_QUESTION_PREFIX,
+  microLearningQuestionId,
+  selectMicroLearningConceptId,
+  type MicroLearningConceptId
+} from "./micro-learning";
 export {
   ARC_STAGE_ORDER,
   arcStageForModule,
@@ -90,7 +99,9 @@ export {
   buildCanonicalQuestion,
   CANONICAL_LANGUAGES,
   CANONICAL_QUESTION_BANK,
+  agilityEntries,
   canonicalEntriesForStage,
+  isAgilityQuestionId,
   isCanonicalQuestionId,
   isDriversQuestionId,
   isWorkStyleQuestionId,

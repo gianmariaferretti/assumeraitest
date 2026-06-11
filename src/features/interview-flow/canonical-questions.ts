@@ -218,6 +218,81 @@ export const CANONICAL_QUESTION_BANK: readonly CanonicalQuestionEntry[] = [
     evidenceRequirements: ["STAR evidence of complex end-to-end ownership"]
   },
   {
+    // Learning agility (Phase 15): a real past learning episode, scored with
+    // the dedicated learning_agility BARS competency. Scores the PROCESS of
+    // getting up to speed, never prior knowledge.
+    id: "canonical_agility_star",
+    stage: "behavioral_core",
+    scoringMode: "full",
+    moduleId: "domain",
+    timeTargetSeconds: 150,
+    prompts: {
+      en: "Tell me about a time you had to get up to speed on something genuinely new to you, fast. How did you go about it, and what did you change along the way as you learned?",
+      it: "Mi racconti una volta in cui ha dovuto padroneggiare in fretta qualcosa di davvero nuovo per lei. Come ha proceduto, e cosa ha cambiato strada facendo man mano che imparava?",
+      fr: "Parlez-moi d'une fois où vous avez dû monter en compétence rapidement sur quelque chose de vraiment nouveau pour vous. Comment avez-vous procédé, et qu'avez-vous ajusté en cours de route ?",
+      de: "Erzählen Sie mir von einer Situation, in der Sie sich schnell in etwas für Sie völlig Neues einarbeiten mussten. Wie sind Sie vorgegangen, und was haben Sie unterwegs angepasst, während Sie dazulernten?",
+      es: "Cuénteme una vez en que tuvo que ponerse al día rápidamente con algo realmente nuevo para usted. ¿Cómo lo abordó y qué cambió por el camino a medida que aprendía?"
+    },
+    rubric: ["Learning process under novelty: strategy chosen, feedback sought, course corrections made. Never scores prior familiarity."],
+    expectedSignals: ["Deliberate learning strategy", "Updating on feedback while learning"],
+    evidenceRequirements: ["STAR evidence of getting up to speed on something new"]
+  },
+  {
+    // Micro-learning task bank (Phase 15): exactly ONE of the following three
+    // is included per interview, selected deterministically (micro-learning.ts).
+    // The concept is fully explained in the prompt — no prior knowledge needed,
+    // and admitting unfamiliarity never lowers the score.
+    id: "canonical_agility_micro_goodhart_measure",
+    stage: "behavioral_core",
+    scoringMode: "full",
+    moduleId: "domain",
+    timeTargetSeconds: 150,
+    prompts: {
+      en: "Here is an idea that may be new to you — you are not expected to know it, everything you need is in this description. When a measure becomes a target, it stops being a good measure: people start optimizing the number itself instead of the goal it was meant to track. In your own words, describe a situation, real or invented, where this could happen, and one way to reduce the risk.",
+      it: "Le propongo un'idea forse nuova per lei — non è richiesto conoscerla: tutto ciò che le serve è in questa descrizione. Quando una metrica diventa un obiettivo, smette di essere una buona metrica: le persone iniziano a ottimizzare il numero in sé invece dello scopo che doveva misurare. Con parole sue, mi descriva una situazione, reale o inventata, in cui questo potrebbe accadere, e un modo per ridurre il rischio.",
+      fr: "Voici une idée peut-être nouvelle pour vous — vous n'êtes pas censé la connaître : tout ce qu'il vous faut est dans cette description. Quand une mesure devient un objectif, elle cesse d'être une bonne mesure : on se met à optimiser le chiffre lui-même plutôt que le but qu'il devait suivre. Avec vos mots, décrivez-moi une situation, réelle ou inventée, où cela pourrait arriver, et une façon de réduire le risque.",
+      de: "Hier ist eine Idee, die für Sie vielleicht neu ist — Sie müssen sie nicht kennen, alles Nötige steht in dieser Beschreibung. Wenn eine Kennzahl zum Ziel wird, hört sie auf, eine gute Kennzahl zu sein: Menschen optimieren dann die Zahl selbst statt des Zwecks, den sie messen sollte. Beschreiben Sie mir in eigenen Worten eine Situation, real oder erfunden, in der das passieren könnte, und eine Möglichkeit, das Risiko zu verringern.",
+      es: "Le propongo una idea quizá nueva para usted — no se espera que la conozca: todo lo que necesita está en esta descripción. Cuando una métrica se convierte en objetivo, deja de ser una buena métrica: la gente empieza a optimizar el número en sí en lugar del fin que debía medir. Con sus palabras, descríbame una situación, real o inventada, en la que esto podría ocurrir, y una forma de reducir el riesgo."
+    },
+    rubric: ["Micro-learning application: engages with the new idea, applies it coherently, surfaces assumptions. Never scores prior familiarity with the concept."],
+    expectedSignals: ["Applies a just-learned idea to a concrete case", "Reasoning visible while learning"],
+    evidenceRequirements: ["application of the in-prompt concept to a concrete situation"]
+  },
+  {
+    id: "canonical_agility_micro_premortem",
+    stage: "behavioral_core",
+    scoringMode: "full",
+    moduleId: "domain",
+    timeTargetSeconds: 150,
+    prompts: {
+      en: "Here is an idea that may be new to you — you are not expected to know it, everything you need is in this description. A premortem works backwards: before starting a plan, you imagine it has already failed completely and list the most likely reasons why, then strengthen the plan against them. Pick any everyday project — moving house, organizing an event, anything — and walk me through how you would run a premortem on it.",
+      it: "Le propongo un'idea forse nuova per lei — non è richiesto conoscerla: tutto ciò che le serve è in questa descrizione. Un premortem funziona al contrario: prima di avviare un piano, si immagina che sia già fallito del tutto e si elencano le cause più probabili, per poi rinforzare il piano contro di esse. Scelga un progetto qualunque della vita quotidiana — un trasloco, l'organizzazione di un evento, qualsiasi cosa — e mi descriva come ci applicherebbe un premortem.",
+      fr: "Voici une idée peut-être nouvelle pour vous — vous n'êtes pas censé la connaître : tout ce qu'il vous faut est dans cette description. Un premortem fonctionne à rebours : avant de lancer un plan, on imagine qu'il a déjà complètement échoué et on liste les causes les plus probables, puis on renforce le plan contre elles. Choisissez un projet du quotidien — un déménagement, l'organisation d'un événement, n'importe quoi — et expliquez-moi comment vous y appliqueriez un premortem.",
+      de: "Hier ist eine Idee, die für Sie vielleicht neu ist — Sie müssen sie nicht kennen, alles Nötige steht in dieser Beschreibung. Ein Premortem funktioniert rückwärts: Bevor ein Plan startet, stellt man sich vor, er sei bereits vollständig gescheitert, listet die wahrscheinlichsten Gründe auf und stärkt den Plan dann dagegen. Wählen Sie ein beliebiges Alltagsprojekt — einen Umzug, die Organisation einer Feier, irgendetwas — und erklären Sie mir, wie Sie dafür ein Premortem durchführen würden.",
+      es: "Le propongo una idea quizá nueva para usted — no se espera que la conozca: todo lo que necesita está en esta descripción. Un premortem funciona al revés: antes de iniciar un plan, se imagina que ya ha fracasado por completo y se enumeran las causas más probables, para luego reforzar el plan contra ellas. Elija cualquier proyecto cotidiano — una mudanza, organizar un evento, lo que sea — y explíqueme cómo le aplicaría un premortem."
+    },
+    rubric: ["Micro-learning application: engages with the new idea, applies it coherently, surfaces assumptions. Never scores prior familiarity with the concept."],
+    expectedSignals: ["Applies a just-learned idea to a concrete case", "Reasoning visible while learning"],
+    evidenceRequirements: ["application of the in-prompt concept to a concrete situation"]
+  },
+  {
+    id: "canonical_agility_micro_swiss_cheese",
+    stage: "behavioral_core",
+    scoringMode: "full",
+    moduleId: "domain",
+    timeTargetSeconds: 150,
+    prompts: {
+      en: "Here is an idea that may be new to you — you are not expected to know it, everything you need is in this description. The swiss-cheese model says failures happen when the holes in several imperfect layers of protection happen to line up; no single layer needs to be perfect as long as the holes don't align. Use this idea to explain how you would make an error-prone everyday task safer.",
+      it: "Le propongo un'idea forse nuova per lei — non è richiesto conoscerla: tutto ciò che le serve è in questa descrizione. Il modello del formaggio svizzero dice che i guasti accadono quando i buchi di più strati imperfetti di protezione si trovano allineati per caso; nessuno strato deve essere perfetto, purché i buchi non si allineino. Usi questa idea per spiegarmi come renderebbe più sicura un'attività quotidiana soggetta a errori.",
+      fr: "Voici une idée peut-être nouvelle pour vous — vous n'êtes pas censé la connaître : tout ce qu'il vous faut est dans cette description. Le modèle du gruyère dit que les défaillances surviennent quand les trous de plusieurs couches de protection imparfaites se retrouvent alignés ; aucune couche n'a besoin d'être parfaite tant que les trous ne s'alignent pas. Utilisez cette idée pour m'expliquer comment vous rendriez plus sûre une tâche quotidienne sujette aux erreurs.",
+      de: "Hier ist eine Idee, die für Sie vielleicht neu ist — Sie müssen sie nicht kennen, alles Nötige steht in dieser Beschreibung. Das Schweizer-Käse-Modell besagt, dass Fehler passieren, wenn die Löcher mehrerer unvollkommener Schutzschichten zufällig übereinanderliegen; keine Schicht muss perfekt sein, solange sich die Löcher nicht decken. Nutzen Sie diese Idee, um mir zu erklären, wie Sie eine fehleranfällige Alltagsaufgabe sicherer machen würden.",
+      es: "Le propongo una idea quizá nueva para usted — no se espera que la conozca: todo lo que necesita está en esta descripción. El modelo del queso suizo dice que los fallos ocurren cuando los agujeros de varias capas imperfectas de protección se alinean por casualidad; ninguna capa tiene que ser perfecta mientras los agujeros no coincidan. Use esta idea para explicarme cómo haría más segura una tarea cotidiana propensa a errores."
+    },
+    rubric: ["Micro-learning application: engages with the new idea, applies it coherently, surfaces assumptions. Never scores prior familiarity with the concept."],
+    expectedSignals: ["Applies a just-learned idea to a concrete case", "Reasoning visible while learning"],
+    evidenceRequirements: ["application of the in-prompt concept to a concrete situation"]
+  },
+  {
     id: "canonical_situational_sales_junior",
     stage: "situational",
     scoringMode: "full",
@@ -387,6 +462,20 @@ export function jobDriverEntries(): CanonicalQuestionEntry[] {
   return CANONICAL_QUESTION_BANK.filter((entry) => isDriversQuestionId(entry.id));
 }
 
+/** True for learning-agility items (STAR + micro-learning task, Phase 15). */
+export function isAgilityQuestionId(questionId: string): boolean {
+  return questionId.startsWith("canonical_agility_");
+}
+
+/**
+ * The learning-agility items: the STAR item plus the full micro-task concept
+ * bank. The arc builder includes the STAR item always and exactly ONE
+ * micro-task, selected deterministically (micro-learning.ts).
+ */
+export function agilityEntries(): CanonicalQuestionEntry[] {
+  return CANONICAL_QUESTION_BANK.filter((entry) => isAgilityQuestionId(entry.id));
+}
+
 export interface CanonicalSelection {
   readonly roleFamily: RoleFamily;
   readonly seniority: CanonicalSeniorityBand | undefined;
@@ -398,13 +487,15 @@ export function canonicalEntriesForStage(
   stage: CanonicalQuestionEntry["stage"],
   selection: Pick<CanonicalSelection, "roleFamily" | "seniority">
 ): CanonicalQuestionEntry[] {
-  // Work-style dilemmas and job-driver items are selected separately (always
-  // included) and never participate in the family/generic substitution logic.
+  // Work-style dilemmas, job-driver items, and learning-agility items are
+  // selected separately (always included, the micro-task deterministically)
+  // and never participate in the family/generic substitution logic.
   const stageEntries = CANONICAL_QUESTION_BANK.filter(
     (entry) =>
       entry.stage === stage &&
       !isWorkStyleQuestionId(entry.id) &&
-      !isDriversQuestionId(entry.id)
+      !isDriversQuestionId(entry.id) &&
+      !isAgilityQuestionId(entry.id)
   );
   const familySpecific = stageEntries.filter(
     (entry) =>

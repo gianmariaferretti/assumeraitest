@@ -5,6 +5,11 @@ import type {
   ModuleId,
 } from "../interview-flow";
 import {
+  LEARNING_AGILITY_COMPETENCY_ID,
+  learningAgilityWeightForSeniority,
+} from "../interview-flow/module-competencies";
+import { resolveSeniorityBand } from "../interview-flow/interview-arc";
+import {
   assessCompetencyScores,
   assessModuleScore,
   type CompetencyMeta,
@@ -867,12 +872,31 @@ export interface ModuleScoreMeta extends CompetencyMeta {
 export function aggregateModuleScores(
   evaluations: readonly BarsEvaluation[],
   metaByCompetency: Readonly<Record<string, ModuleScoreMeta>> = {},
+  options?: { readonly seniority?: string },
 ): ModuleScore[] {
-  const competencyScores = assessCompetencyScores(evaluations, metaByCompetency);
+  // Phase 15: learning agility is weighted by seniority (more for juniors,
+  // who have the least track record; never zeroed for anyone).
+  const agilityBase: ModuleScoreMeta = metaByCompetency[LEARNING_AGILITY_COMPETENCY_ID] ?? {
+    moduleId: "domain",
+    tier: 2,
+  };
+  const meta: Readonly<Record<string, ModuleScoreMeta>> =
+    options?.seniority === undefined
+      ? metaByCompetency
+      : {
+          ...metaByCompetency,
+          [LEARNING_AGILITY_COMPETENCY_ID]: {
+            ...agilityBase,
+            weight: learningAgilityWeightForSeniority(
+              resolveSeniorityBand(options.seniority),
+            ),
+          },
+        };
+  const competencyScores = assessCompetencyScores(evaluations, meta);
 
   const byModule = new Map<string, CompetencyScore[]>();
   for (const competencyScore of competencyScores) {
-    const moduleId = String(metaByCompetency[competencyScore.competency_id]?.moduleId ?? "general");
+    const moduleId = String(meta[competencyScore.competency_id]?.moduleId ?? "general");
     const list = byModule.get(moduleId) ?? [];
     list.push(competencyScore);
     byModule.set(moduleId, list);
