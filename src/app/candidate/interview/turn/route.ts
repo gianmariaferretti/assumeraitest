@@ -14,7 +14,13 @@ import {
   persistInterviewEvaluatorRun,
   persistInterviewSessionSnapshot
 } from "@/features/candidate-persistence/supabase-candidate-store";
-import { conductServerTurn, parseServerTurnRequestBody } from "@/features/interview-flow";
+import {
+  averageAsrConfidence,
+  conductServerTurn,
+  parseServerTurnRequestBody,
+  readAsrThresholdFromEnv,
+  shouldRouteForAsrReview
+} from "@/features/interview-flow";
 import { checkLlmBudget, secondsUntilUtcMidnight } from "@/lib/llm-budget";
 import { logInfo, logWarn } from "@/lib/log";
 import {
@@ -136,13 +142,16 @@ export async function POST(request: NextRequest) {
   }
 
   // Consume the submitted turn (evaluated, or expired when a cap closed the
-  // module before evaluation) and persist the new authoritative state.
+  // module before evaluation) and persist the new authoritative state. The
+  // per-turn ASR confidence is recorded for review routing only — it is never
+  // a score input.
   await store.markTurnEvaluated(
     candidateContext.candidateId,
     state.session.sessionId,
     parsed.value.turnId,
     new Date().toISOString(),
-    result.kind === "module_closed" ? "expired" : "evaluated"
+    result.kind === "module_closed" ? "expired" : "evaluated",
+    parsed.value.asrConfidence
   );
 
   const persistedModule = await persistServerModuleSession(
@@ -159,9 +168,36 @@ export async function POST(request: NextRequest) {
         result.nextTurn && result.nextTurn.moduleId === parsed.value.moduleId
           ? result.nextTurn.issuedAt
           : null,
-      turnCount: result.kind === "turn_completed" ? result.turnCount : moduleRow.turnCount
+      turnCount: result.kind === "turn_completed" ? result.turnCount : moduleRow.turnCount,
+      interviewMode: moduleRow.interviewMode
     }
   );
+
+  // ASR-quality routing: when the module completes, a low average
+  // transcription confidence routes the evaluation to human review.
+  if (result.kind === "turn_completed" && result.moduleCompleted) {
+    const confidences = await store.listModuleAsrConfidences(
+      candidateContext.candidateId,
+      result.session.sessionId,
+      parsed.value.moduleId
+    );
+    const averageConfidence = averageAsrConfidence(confidences);
+    const threshold = readAsrThresholdFromEnv(process.env.ASR_CONFIDENCE_REVIEW_THRESHOLD);
+    if (shouldRouteForAsrReview(averageConfidence, threshold)) {
+      await store.recordAsrReviewFlag(
+        candidateContext.candidateId,
+        result.session.sessionId,
+        parsed.value.moduleId,
+        averageConfidence as number
+      );
+      logWarn("module_routed_for_asr_review", {
+        ...logContext,
+        moduleId: parsed.value.moduleId,
+        average_asr_confidence: averageConfidence,
+        threshold
+      });
+    }
+  }
 
   // When the turn auto-advanced into the next module, persist that module's
   // freshly issued turn as well.
@@ -175,7 +211,8 @@ export async function POST(request: NextRequest) {
       {
         activeTurnId: result.nextTurn.turnId,
         turnStartedAt: result.nextTurn.issuedAt,
-        turnCount: nextRow?.turnCount ?? 0
+        turnCount: nextRow?.turnCount ?? 0,
+        interviewMode: nextRow?.interviewMode ?? moduleRow.interviewMode
       }
     );
   }

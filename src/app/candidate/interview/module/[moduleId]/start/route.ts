@@ -119,7 +119,8 @@ export async function POST(
     {
       activeTurnId: turn.turnId,
       turnStartedAt: turn.issuedAt,
-      turnCount: moduleRow.turnCount
+      turnCount: moduleRow.turnCount,
+      interviewMode: moduleRow.interviewMode
     }
   );
   if (!resumablePendingTurn) {

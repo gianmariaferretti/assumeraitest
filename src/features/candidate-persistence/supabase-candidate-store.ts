@@ -49,6 +49,8 @@ export type CandidateProgressState = {
   readonly latestResumeDocumentId?: string;
   readonly latestInterviewSessionId?: string;
   readonly interviewLanguage?: CandidateInterviewLanguageCode;
+  /** Pre-interview mode choice; text is a first-class equivalent mode. */
+  readonly interviewMode?: "voice" | "text";
 };
 
 type CandidateWorkflowType =
@@ -419,7 +421,8 @@ export async function readCandidateProgress(
       latestInterviewSessionId,
       interviewLanguage: resolveExplicitCandidateInterviewLanguageCode(
         progress?.interview_language
-      )
+      ),
+      interviewMode: progress?.interview_mode === "text" ? "text" : "voice"
     };
   } catch {
     return unavailableProgress();

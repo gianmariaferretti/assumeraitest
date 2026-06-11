@@ -2606,6 +2606,23 @@ const en = {
     },
   },
   productPages: productPagesEn,
+  accessibility: {
+    title: "Accessibility at AssumerAI",
+    intro:
+      "Everyone deserves an equivalent interview. A stutter, a speech difference, a strong accent, or deafness must never cost anyone an opportunity.",
+    textModeTitle: "Written interview mode",
+    textModeBody:
+      "Before the interview starts you can choose a fully written interview: same questions, same evaluation anchors, same scoring. It is a first-class option, not a fallback, and requires no microphone or camera.",
+    accommodationTitle: "Accommodations",
+    accommodationBody:
+      "From the pre-interview screen you can request an accommodation in free text. We never ask for or store medical details; your request is reviewed by a person, never shown to companies, and never affects scoring.",
+    asrTitle: "Transcription quality safeguards",
+    asrBody:
+      "Voice interviews are scored on content only: hesitations, repetitions, and transcription artifacts never lower a score. When transcription confidence is low, your evaluation is automatically routed to a human reviewer.",
+    contactTitle: "Contact",
+    contactBody:
+      "If you need help with accessibility, write to accessibility@assumerai.example and a person will follow up.",
+  },
   footer: {
     tagline:
       "The job app you'll only ever use once. Made in Milano + Berlin, by people who've been on both sides of the table.",
@@ -3577,6 +3594,23 @@ const it: TranslationContent = {
     },
   },
   productPages: productPagesIt,
+  accessibility: {
+    title: "Accessibilità in AssumerAI",
+    intro:
+      "Tutti meritano un colloquio equivalente. Una balbuzie, una differenza nel parlato, un accento marcato o la sordità non devono mai costare un'opportunità.",
+    textModeTitle: "Modalità colloquio scritto",
+    textModeBody:
+      "Prima dell'inizio del colloquio puoi scegliere un colloquio interamente scritto: stesse domande, stesse ancore di valutazione, stesso punteggio. È un'opzione di prima classe, non un ripiego, e non richiede microfono né fotocamera.",
+    accommodationTitle: "Accomodamenti",
+    accommodationBody:
+      "Dalla schermata pre-colloquio puoi richiedere un accomodamento in testo libero. Non chiediamo né conserviamo dettagli medici; la richiesta è letta da una persona, mai mostrata alle aziende e non influisce mai sui punteggi.",
+    asrTitle: "Tutele sulla qualità di trascrizione",
+    asrBody:
+      "I colloqui vocali sono valutati solo sul contenuto: esitazioni, ripetizioni e artefatti di trascrizione non abbassano mai un punteggio. Quando la confidenza di trascrizione è bassa, la valutazione viene instradata automaticamente a un revisore umano.",
+    contactTitle: "Contatti",
+    contactBody:
+      "Se hai bisogno di supporto sull'accessibilità, scrivi a accessibility@assumerai.example: ti risponderà una persona.",
+  },
   footer: {
     tagline:
       "L'app per il lavoro che userai una sola volta. Made in Milano + Berlin, da persone che sono state da entrambi i lati del tavolo.",
@@ -4546,6 +4580,23 @@ const fr: TranslationContent = {
     },
   },
   productPages: productPagesFr,
+  accessibility: {
+    title: "Accessibilite chez AssumerAI",
+    intro:
+      "Chacun merite un entretien equivalent. Un begaiement, une difference de parole, un accent marque ou la surdite ne doivent jamais couter une opportunite.",
+    textModeTitle: "Mode entretien ecrit",
+    textModeBody:
+      "Avant le debut de l'entretien, vous pouvez choisir un entretien entierement ecrit : memes questions, memes ancres d'evaluation, meme score. C'est une option de premier rang, pas un pis-aller, sans micro ni camera.",
+    accommodationTitle: "Amenagements",
+    accommodationBody:
+      "Depuis l'ecran pre-entretien vous pouvez demander un amenagement en texte libre. Nous ne demandons ni ne conservons de details medicaux ; la demande est lue par une personne, jamais montree aux entreprises, et n'influence jamais les scores.",
+    asrTitle: "Garanties sur la qualite de transcription",
+    asrBody:
+      "Les entretiens vocaux sont evalues sur le contenu uniquement : hesitations, repetitions et artefacts de transcription ne baissent jamais un score. Quand la confiance de transcription est basse, l'evaluation est automatiquement adressee a un relecteur humain.",
+    contactTitle: "Contact",
+    contactBody:
+      "Pour toute aide sur l'accessibilite, ecrivez a accessibility@assumerai.example : une personne vous repondra.",
+  },
   footer: {
     tagline:
       "L'app emploi que vous n'utiliserez qu'une fois. Made in Milano + Berlin, par des personnes qui ont connu les deux côtés de la table.",

@@ -59,7 +59,24 @@ export interface ServerInterviewStore {
     interviewSessionId: string,
     turnId: string,
     evaluatedAt: string,
-    status?: Extract<TurnLedgerStatus, "evaluated" | "expired">
+    status?: Extract<TurnLedgerStatus, "evaluated" | "expired">,
+    asrConfidence?: number
+  ): Promise<CandidatePersistenceResult>;
+  /** Per-turn ASR confidences for a module (null entries = text-mode turns). */
+  listModuleAsrConfidences(
+    candidateId: string,
+    interviewSessionId: string,
+    moduleId: string
+  ): Promise<(number | null)[]>;
+  /**
+   * Route a module's evaluation to human review for low transcription
+   * confidence (idempotent; reuses the Phase 8 human-review request table).
+   */
+  recordAsrReviewFlag(
+    candidateId: string,
+    interviewSessionId: string,
+    moduleId: string,
+    averageConfidence: number
   ): Promise<CandidatePersistenceResult>;
   /** Persist one turn's honest integrity signals (service-role write only). */
   recordIntegritySignals(
@@ -113,6 +130,8 @@ export async function persistServerModuleSession(
     readonly activeTurnId: string | null;
     readonly turnStartedAt: string | null;
     readonly turnCount: number;
+    /** Mode the module is conducted in (voice | text); defaults to voice. */
+    readonly interviewMode?: "voice" | "text";
   }
 ): Promise<CandidatePersistenceResult> {
   const moduleSession = session.module_sessions[moduleId];
@@ -127,6 +146,7 @@ export async function persistServerModuleSession(
     activeTurnId: turnTracking.activeTurnId,
     turnStartedAt: turnTracking.turnStartedAt,
     turnCount: turnTracking.turnCount,
+    interviewMode: turnTracking.interviewMode ?? "voice",
     updatedAt: new Date().toISOString()
   });
 }
@@ -135,14 +155,16 @@ export async function persistServerModuleSession(
 export async function persistAllServerModuleSessions(
   store: ServerInterviewStore,
   candidateId: string,
-  session: InterviewSession
+  session: InterviewSession,
+  interviewMode: "voice" | "text" = "voice"
 ): Promise<CandidatePersistenceResult> {
   let worst: CandidatePersistenceResult = { status: "supabase_persisted" };
   for (const moduleId of Object.keys(session.module_sessions)) {
     const result = await persistServerModuleSession(store, candidateId, session, moduleId, {
       activeTurnId: null,
       turnStartedAt: null,
-      turnCount: 0
+      turnCount: 0,
+      interviewMode
     });
     if (result.status !== "supabase_persisted") {
       worst = result;
@@ -161,6 +183,8 @@ export interface CreateServerInterviewSessionInput {
   readonly interviewLanguage: CandidateInterviewLanguageCode;
   readonly candidateProfile?: CandidateProfile;
   readonly questionBank?: InterviewQuestion[];
+  /** Pre-interview mode choice (text is first-class, not a fallback). */
+  readonly interviewMode?: "voice" | "text";
 }
 
 function createServerSessionId(): string {
@@ -183,7 +207,12 @@ export async function createServerInterviewSession(
     questionBank: input.questionBank,
     sessionId: createServerSessionId()
   });
-  const persistence = await persistAllServerModuleSessions(store, candidateId, session);
+  const persistence = await persistAllServerModuleSessions(
+    store,
+    candidateId,
+    session,
+    input.interviewMode ?? "voice"
+  );
 
   return { session, persistence };
 }
@@ -230,7 +259,7 @@ export function createSupabaseServerInterviewStore(admin: AdminClient): ServerIn
       const filtered = admin
         .from("candidate_module_sessions")
         .select(
-          "interview_session_id,module_id,state,module_payload,started_at,completed_at,active_turn_id,turn_started_at,turn_count,updated_at"
+          "interview_session_id,module_id,state,module_payload,started_at,completed_at,active_turn_id,turn_started_at,turn_count,interview_mode,updated_at"
         )
         .eq("user_id", candidateId);
       const query = interviewSessionId
@@ -264,6 +293,7 @@ export function createSupabaseServerInterviewStore(admin: AdminClient): ServerIn
             active_turn_id: row.activeTurnId,
             turn_started_at: row.turnStartedAt,
             turn_count: row.turnCount,
+            interview_mode: row.interviewMode ?? "voice",
             updated_at: row.updatedAt ?? new Date().toISOString()
           },
           { onConflict: "user_id,interview_session_id,module_id" }
@@ -305,14 +335,61 @@ export function createSupabaseServerInterviewStore(admin: AdminClient): ServerIn
       );
     },
 
-    async markTurnEvaluated(candidateId, interviewSessionId, turnId, evaluatedAt, status) {
+    async markTurnEvaluated(candidateId, interviewSessionId, turnId, evaluatedAt, status, asrConfidence) {
       return runWrite(
         admin
           .from("candidate_interview_turns")
-          .update({ status: status ?? "evaluated", evaluated_at: evaluatedAt })
+          .update({
+            status: status ?? "evaluated",
+            evaluated_at: evaluatedAt,
+            ...(asrConfidence === undefined ? {} : { asr_confidence: asrConfidence })
+          })
           .eq("user_id", candidateId)
           .eq("interview_session_id", interviewSessionId)
           .eq("turn_id", turnId)
+      );
+    },
+
+    async listModuleAsrConfidences(candidateId, interviewSessionId, moduleId) {
+      const { data, error } = await admin
+        .from("candidate_interview_turns")
+        .select("asr_confidence")
+        .eq("user_id", candidateId)
+        .eq("interview_session_id", interviewSessionId)
+        .eq("module_id", moduleId)
+        .eq("status", "evaluated");
+      if (error || !data) {
+        return [];
+      }
+
+      return (data as Record<string, unknown>[]).map((row) =>
+        typeof row.asr_confidence === "number" ? row.asr_confidence : null
+      );
+    },
+
+    async recordAsrReviewFlag(candidateId, interviewSessionId, moduleId, averageConfidence) {
+      return runWrite(
+        admin.from("human_review_requests").upsert(
+          {
+            user_id: candidateId,
+            request_id: `asr_review_${interviewSessionId}_${moduleId}`,
+            target_type: "interview_scorecard",
+            target_id: `${interviewSessionId}:${moduleId}`,
+            summary: "low transcription confidence",
+            evidence_notes: `Module ${moduleId} average ASR confidence ${averageConfidence.toFixed(
+              2
+            )} is below the review threshold. Scores must be human-reviewed; transcription quality is never a score input.`,
+            status: "open",
+            request_payload: {
+              reason: "low_transcription_confidence",
+              module_id: moduleId,
+              average_asr_confidence: averageConfidence
+            },
+            audit_event_id: `audit_asr_review_${interviewSessionId}_${moduleId}`,
+            requested_at: new Date().toISOString()
+          },
+          { onConflict: "user_id,request_id", ignoreDuplicates: true }
+        )
       );
     },
 
@@ -350,6 +427,7 @@ function rowFromSupabase(row: Record<string, unknown>): PersistedModuleSessionRo
     activeTurnId: readNullableString(row.active_turn_id),
     turnStartedAt: readNullableString(row.turn_started_at),
     turnCount: typeof row.turn_count === "number" ? row.turn_count : 0,
+    interviewMode: row.interview_mode === "text" ? "text" : "voice",
     updatedAt: readNullableString(row.updated_at)
   };
 }
@@ -386,6 +464,8 @@ async function runWrite(
 type MemoryCandidateState = {
   readonly rows: Map<string, PersistedModuleSessionRow>;
   readonly turns: Map<string, TurnLedgerStatus>;
+  readonly asrConfidences: Map<string, number>;
+  readonly asrReviewFlags: Set<string>;
 };
 
 const memoryState = new Map<string, MemoryCandidateState>();
@@ -393,7 +473,7 @@ const memoryState = new Map<string, MemoryCandidateState>();
 function memoryFor(candidateId: string): MemoryCandidateState {
   let state = memoryState.get(candidateId);
   if (!state) {
-    state = { rows: new Map(), turns: new Map() };
+    state = { rows: new Map(), turns: new Map(), asrConfidences: new Map(), asrReviewFlags: new Set() };
     memoryState.set(candidateId, state);
   }
   return state;
@@ -437,8 +517,24 @@ export function createInMemoryServerInterviewStore(): ServerInterviewStore {
       return { status: "local_fallback" };
     },
 
-    async markTurnEvaluated(candidateId, interviewSessionId, turnId, _evaluatedAt, status) {
-      memoryFor(candidateId).turns.set(`${interviewSessionId}:${turnId}`, status ?? "evaluated");
+    async markTurnEvaluated(candidateId, interviewSessionId, turnId, _evaluatedAt, status, asrConfidence) {
+      const state = memoryFor(candidateId);
+      state.turns.set(`${interviewSessionId}:${turnId}`, status ?? "evaluated");
+      if (asrConfidence !== undefined) {
+        state.asrConfidences.set(`${interviewSessionId}:${turnId}`, asrConfidence);
+      }
+      return { status: "local_fallback" };
+    },
+
+    async listModuleAsrConfidences(candidateId, interviewSessionId) {
+      const state = memoryFor(candidateId);
+      return [...state.asrConfidences.entries()]
+        .filter(([key]) => key.startsWith(`${interviewSessionId}:`))
+        .map(([, value]) => value);
+    },
+
+    async recordAsrReviewFlag(candidateId, interviewSessionId, moduleId) {
+      memoryFor(candidateId).asrReviewFlags.add(`${interviewSessionId}:${moduleId}`);
       return { status: "local_fallback" };
     },
 

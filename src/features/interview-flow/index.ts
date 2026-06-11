@@ -104,6 +104,16 @@ export {
   EMPLOYER_VOICE_PATTERNS
 } from "./platform-neutrality";
 export {
+  ASR_CONFIDENCE_REVIEW_THRESHOLD_DEFAULT,
+  asrConfidenceBand,
+  averageAsrConfidence,
+  LOW_ASR_CONFIDENCE_REVIEW_REASON,
+  parseAsrConfidence,
+  readAsrThresholdFromEnv,
+  shouldRouteForAsrReview,
+  stripDisfluencies
+} from "./asr-quality";
+export {
   accumulateIntegritySummary,
   AUDIO_GAP_THRESHOLD_SECONDS,
   emptyModuleIntegritySummary,

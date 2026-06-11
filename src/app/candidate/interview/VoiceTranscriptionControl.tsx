@@ -23,6 +23,8 @@ interface VoiceTranscriptionControlProps {
   readonly disabled: boolean;
   readonly interviewLanguage: CandidateInterviewLanguageCode;
   readonly maxDurationSeconds: number;
+  /** Deepgram per-utterance confidence (final events only), for ASR-quality routing. */
+  readonly onAsrConfidence?: (confidence: number) => void;
   readonly onCaptureActiveChange?: (active: boolean) => void;
   readonly onError: (message: string) => void;
   readonly onRemainingTimeChange?: (remainingLabel: string | null) => void;
@@ -45,6 +47,7 @@ export function VoiceTranscriptionControl({
   disabled,
   interviewLanguage,
   maxDurationSeconds,
+  onAsrConfidence,
   onCaptureActiveChange,
   onError,
   onRemainingTimeChange,
@@ -264,6 +267,9 @@ export function VoiceTranscriptionControl({
             transcriptEvent.transcript
           );
           interimTranscriptRef.current = "";
+          if (typeof transcriptEvent.confidence === "number") {
+            onAsrConfidence?.(transcriptEvent.confidence);
+          }
         } else {
           interimTranscriptRef.current = transcriptEvent.transcript;
         }
@@ -307,7 +313,7 @@ export function VoiceTranscriptionControl({
       streamRef.current = stream;
       return socket;
     },
-    [completeLiveTranscription, copy, currentTranscript, interviewLanguage, isCurrentStartup, onTranscript]
+    [completeLiveTranscription, copy, currentTranscript, interviewLanguage, isCurrentStartup, onAsrConfidence, onTranscript]
   );
 
   const startRecording = useCallback(async () => {

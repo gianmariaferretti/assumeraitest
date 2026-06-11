@@ -95,6 +95,8 @@ type ActiveTurn = {
 interface InterviewSessionClientProps {
   readonly initialSession: InterviewSession;
   readonly initialInterviewLanguage: CandidateInterviewLanguageCode;
+  /** Pre-interview mode choice: text is a first-class equivalent mode. */
+  readonly initialInterviewMode?: "voice" | "text";
   readonly initialQuestionPlanAudit?: QuestionPlanAudit;
 }
 
@@ -217,8 +219,10 @@ function createQuestionTransition(
 export function InterviewSessionClient({
   initialSession,
   initialInterviewLanguage,
+  initialInterviewMode = "voice",
   initialQuestionPlanAudit
 }: InterviewSessionClientProps) {
+  const isTextMode = initialInterviewMode === "text";
   const copy = resolveCandidateFlowCopy(initialInterviewLanguage).interview;
   void initialQuestionPlanAudit;
   const snapshotPersistenceTimerRef = useRef<number | null>(null);
@@ -227,6 +231,9 @@ export function InterviewSessionClient({
   // philosophy). Reset whenever a new server turn is issued.
   const integritySignalsRef = useRef(emptyTurnIntegritySignals());
   const lastVoiceActivityAtRef = useRef<number | null>(null);
+  // Deepgram per-utterance confidences for the current turn (voice mode only):
+  // averaged into asrConfidence for review routing, never a score input.
+  const asrConfidencesRef = useRef<number[]>([]);
   const [session, setSession] = useState<InterviewSession>(initialSession);
   const [activeTurn, setActiveTurn] = useState<ActiveTurn | null>(null);
   const [providerSession, setProviderSession] = useState<LiveInterviewProviderSession>(() =>
@@ -391,7 +398,14 @@ export function InterviewSessionClient({
   useEffect(() => {
     integritySignalsRef.current = emptyTurnIntegritySignals();
     lastVoiceActivityAtRef.current = null;
+    asrConfidencesRef.current = [];
   }, [activeTurn?.turnId]);
+
+  const recordAsrConfidence = useCallback((confidence: number) => {
+    if (Number.isFinite(confidence) && confidence >= 0 && confidence <= 1) {
+      asrConfidencesRef.current.push(confidence);
+    }
+  }, []);
 
   /** Track audio continuity: long gaps between transcript updates while recording. */
   const recordVoiceActivity = useCallback(() => {
@@ -596,7 +610,14 @@ export function InterviewSessionClient({
             moduleId: activeTurn.moduleId,
             turnId: activeTurn.turnId,
             candidateAnswer: { answerText },
-            integritySignals: { ...integritySignalsRef.current } satisfies TurnIntegritySignals
+            integritySignals: { ...integritySignalsRef.current } satisfies TurnIntegritySignals,
+            ...(asrConfidencesRef.current.length > 0
+              ? {
+                  asrConfidence:
+                    asrConfidencesRef.current.reduce((sum, value) => sum + value, 0) /
+                    asrConfidencesRef.current.length
+                }
+              : {})
           })
         });
         const data = (await response.json().catch(() => null)) as {
@@ -871,7 +892,24 @@ export function InterviewSessionClient({
               responseTimeRemainingLabel={responseTimeRemainingLabel}
             >
               <div className="camera-control-stack">
-                {questionIsVisible ? (
+                {questionIsVisible && isTextMode ? (
+                  // Text mode: a first-class equivalent input. The typed answer
+                  // replaces the transcript; everything downstream is
+                  // mode-agnostic.
+                  <textarea
+                    aria-label={copy.transcribedResponse}
+                    className="text-mode-answer"
+                    disabled={answerIsLocked}
+                    onChange={(event) => {
+                      setCapturedTranscript(event.target.value);
+                      setError("");
+                    }}
+                    placeholder={copy.spokenResponsePlaceholder}
+                    rows={6}
+                    value={capturedTranscript}
+                  />
+                ) : null}
+                {questionIsVisible && !isTextMode ? (
                   <VoiceTranscriptionControl
                     activeQuestionId={activeVoiceQuestionId}
                     disabled={
@@ -880,6 +918,7 @@ export function InterviewSessionClient({
                     }
                     interviewLanguage={session.interviewLanguage}
                     maxDurationSeconds={LIVE_INTERVIEW_RESPONSE_WINDOW_SECONDS}
+                    onAsrConfidence={recordAsrConfidence}
                     onCaptureActiveChange={handleVoiceCaptureActiveChange}
                     onError={setError}
                     onRemainingTimeChange={setResponseTimeRemainingLabel}

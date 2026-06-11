@@ -1,3 +1,4 @@
+import { stripDisfluencies } from "../../interview-flow/asr-quality";
 import { containsDisallowedQuestionText } from "../../interview-flow/safety";
 import type { StarEvidenceElement } from "../../interview-flow/types";
 import { recordLlmUsage, type LlmUsageRecorder } from "../../../lib/llm-budget/core";
@@ -203,6 +204,9 @@ function buildSystemPrompt(variant: EvaluatorSystemPromptVariant = "default"): s
   return [
     "You are a structured behavioral interview RESPONSE EVALUATOR. You never address the candidate.",
     "You score ONE answer against ONE competency using its Behaviorally Anchored Rating Scale (BARS).",
+    "Score CONTENT ONLY. The answer may be a speech transcript or a typed text; both are equivalent.",
+    "IGNORE disfluencies ('ehm', 'uh', repetitions, false starts, restarts, self-corrections) and evident transcription artifacts (misheard words, odd punctuation, dropped fragments). They carry no information about the competency and must never lower a score.",
+    "Oral fluency or delivery may be scored ONLY when the competency you are scoring is itself an explicit, dedicated fluency competency with its own BARS anchors — NEVER as an implicit penalty on any other competency.",
     "Translate observed behavior to a 1-10 score strictly via the supplied anchors: below_standard 1-3, meets_standard 4-6, exceeds_standard 7-9, exceptional 10. No impressionistic or vibe-based scoring.",
     "First assess STAR completeness: did the answer establish Situation, Task, Action, Result? Mark each true/false from explicit evidence only.",
     "If a STAR element required by the question is missing, prefer followup_recommendation.action = 'ask_followup' with a single targeted follow-up that probes only the missing element. Do not invent the missing content.",
@@ -319,10 +323,13 @@ function deterministicEvaluation(
   input: EvaluateResponseInput,
   fallbackReason: string,
 ): BarsEvaluation {
-  const star = detectStarHeuristically(input.answerText);
-  const score = deterministicScore(input, star);
+  // Content-only scoring: disfluencies and transcription artifacts must never
+  // change the heuristics (word counts, STAR detection).
+  const contentInput = { ...input, answerText: stripDisfluencies(input.answerText) };
+  const star = detectStarHeuristically(contentInput.answerText);
+  const score = deterministicScore(contentInput, star);
   const level = barsLevelForScore(score);
-  const redFlags = detectRedFlagsHeuristically(input);
+  const redFlags = detectRedFlagsHeuristically(contentInput);
   const missing = STAR_ELEMENTS.filter(
     (element) => input.targetStarElements.includes(element) && !star[element],
   );
@@ -344,7 +351,7 @@ function deterministicEvaluation(
     star_completeness: star,
     bars_score: score,
     bars_level: level,
-    evidence_snippets: firstSnippets(input.answerText, 2),
+    evidence_snippets: firstSnippets(contentInput.answerText, 2),
     red_flags: redFlags,
     followup_recommendation: followup,
     confidence,

@@ -18,7 +18,11 @@ export type CohortDimension =
   | "seniority"
   | "interview_language"
   | "cv_school_class"
-  | "city_class";
+  | "city_class"
+  // Phase 12: text-mode candidates and low-ASR-confidence cohorts must not
+  // show systematically different decision rates without investigation.
+  | "interview_mode"
+  | "asr_confidence_band";
 
 export const COHORT_DIMENSIONS: readonly CohortDimension[] = [
   "role_family",
@@ -26,6 +30,8 @@ export const COHORT_DIMENSIONS: readonly CohortDimension[] = [
   "interview_language",
   "cv_school_class",
   "city_class",
+  "interview_mode",
+  "asr_confidence_band",
 ];
 
 export const FOUR_FIFTHS_THRESHOLD = 0.8;
