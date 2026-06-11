@@ -21,6 +21,27 @@ export type InterviewStatus = "in_progress" | "completed";
 
 export type InterviewMode = "text" | "audio" | "video";
 
+/**
+ * Stage of the realistic interview arc (Phase 11). The whole interview follows
+ * opening → motivation → self_awareness → behavioral_core → situational →
+ * closing, mapped onto the per-module funnel phases.
+ */
+export type InterviewArcStage =
+  | "opening"
+  | "motivation"
+  | "self_awareness"
+  | "behavioral_core"
+  | "situational"
+  | "closing";
+
+/**
+ * How a turn's evaluation enters competency scores:
+ * - baseline_only: calibrates a communication baseline; NEVER moves any score.
+ * - low_weight: counted at reduced weight (e.g. role-family motivation).
+ * - full: normal BARS weight (the default).
+ */
+export type TurnScoringMode = "baseline_only" | "low_weight" | "full";
+
 export interface FollowUpRule {
   reason: FollowUpReason;
   trigger: string;
@@ -52,6 +73,10 @@ export interface InterviewQuestion {
   followUpReason?: FollowUpReason;
   followUpOfQuestionId?: string;
   resumeGrounding?: ResumeQuestionGrounding;
+  /** Realistic-arc stage this question belongs to (Phase 11). */
+  arcStage?: InterviewArcStage;
+  /** How this turn's evaluation enters competency scores (default full). */
+  scoringMode?: TurnScoringMode;
 }
 
 export interface ResumeQuestionGrounding {

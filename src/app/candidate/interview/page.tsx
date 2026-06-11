@@ -78,6 +78,13 @@ export default async function CandidateInterviewPage() {
   const interviewLanguage = resolveCandidateInterviewLanguageCode(
     cookieInterviewLanguage ?? progress.interviewLanguage
   );
+  // Text mode is a first-class equivalent mode, chosen before the interview.
+  const interviewMode: "voice" | "text" =
+    progress.status === "supabase_persisted"
+      ? progress.interviewMode ?? "voice"
+      : cookieStore.get("assumerai_interview_mode")?.value === "text"
+        ? "text"
+        : "voice";
   let profileReview = resumeDocumentId
     ? candidateResumeProfilePipeline.getProfileReview(resumeDocumentId)
     : undefined;
@@ -125,7 +132,8 @@ export default async function CandidateInterviewPage() {
       roleProfile: candidateInterviewPreviewRole,
       interviewLanguage,
       candidateProfile,
-      questionBank: questionPlan?.questions
+      questionBank: questionPlan?.questions,
+      interviewMode
     });
     serverSession = created.session;
     questionPlanAudit = questionPlan
@@ -142,6 +150,7 @@ export default async function CandidateInterviewPage() {
     <InterviewSessionClient
       initialSession={serverSession}
       initialInterviewLanguage={interviewLanguage}
+      initialInterviewMode={interviewMode}
       initialQuestionPlanAudit={questionPlanAudit}
     />
   );

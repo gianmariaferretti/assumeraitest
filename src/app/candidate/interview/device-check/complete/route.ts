@@ -27,6 +27,19 @@ export async function POST(request: NextRequest) {
 
   await persistDeviceCheckCompleted(candidateContext, new Date().toISOString());
 
+  // Completing the device check starts a voice interview (text mode goes
+  // through /candidate/interview/mode and needs no device test).
+  if (candidateContext.mode === "authenticated") {
+    await candidateContext.supabase.from("candidate_interview_progress").upsert(
+      {
+        user_id: candidateContext.user.id,
+        interview_mode: "voice",
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: "user_id" }
+    );
+  }
+
   const response = NextResponse.redirect(new URL(interviewStartPath, request.url), {
     status: 303
   });

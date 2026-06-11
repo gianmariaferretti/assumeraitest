@@ -18,11 +18,12 @@ export const MATCH_DIMENSIONS = [
   "GrowthPotentialFit",
   "EducationCredentialFit",
   "MatchConfidence",
+  "ValuesAlignmentFit",
 ] as const;
 
 export type MatchDimensionName = (typeof MATCH_DIMENSIONS)[number];
 
-export const DEFAULT_MATCH_WEIGHTS_VERSION = "match-weights-v0";
+export const DEFAULT_MATCH_WEIGHTS_VERSION = "match-weights-v1";
 
 export const DEFAULT_MATCH_WEIGHTS: Record<MatchDimensionName, number> = {
   RoleSkillFit: 0.22,
@@ -34,6 +35,9 @@ export const DEFAULT_MATCH_WEIGHTS: Record<MatchDimensionName, number> = {
   GrowthPotentialFit: 0.07,
   EducationCredentialFit: 0.04,
   MatchConfidence: 0.02,
+  // Phase 13: values alignment on declared work-style dimensions (low default;
+  // weights are normalized at scoring time, so the sum need not be 1).
+  ValuesAlignmentFit: 0.05,
 };
 
 /** A versioned weight set (from matching_weight_sets or the in-code default). */

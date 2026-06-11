@@ -6,6 +6,7 @@ import {
 import type { EnsembleEvaluatorOptions } from "../scoring/bars/ensemble-evaluator";
 import type { InterviewerAgentOptions } from "./interviewer-agent";
 import { competencyForModule } from "./module-competencies";
+import { parseAsrConfidence } from "./asr-quality";
 import {
   accumulateIntegritySummary,
   parseTurnIntegritySignals,
@@ -75,6 +76,11 @@ export interface ServerTurnRequest {
    * paste, audio gaps). Validated and clamped; never affects any score.
    */
   readonly integritySignals?: TurnIntegritySignals;
+  /**
+   * Deepgram transcription confidence for the turn (voice mode only).
+   * Recorded for ASR-quality routing to human review; never a score input.
+   */
+  readonly asrConfidence?: number;
 }
 
 export type ParseServerTurnRequestResult =
@@ -146,10 +152,11 @@ export function parseServerTurnRequestBody(payload: unknown): ParseServerTurnReq
 
   // Malformed signals never block the turn: they simply aren't recorded.
   const integritySignals = parseTurnIntegritySignals(payload.integritySignals);
+  const asrConfidence = parseAsrConfidence(payload.asrConfidence);
 
   return {
     ok: true,
-    value: { moduleId, turnId, candidateAnswer: { answerText }, integritySignals }
+    value: { moduleId, turnId, candidateAnswer: { answerText }, integritySignals, asrConfidence }
   };
 }
 
@@ -168,6 +175,8 @@ export interface PersistedModuleSessionRow {
   readonly activeTurnId: string | null;
   readonly turnStartedAt: string | null;
   readonly turnCount: number;
+  /** Mode the module is conducted in (voice | text); text is first-class. */
+  readonly interviewMode?: "voice" | "text";
   readonly updatedAt?: string | null;
 }
 
@@ -591,6 +600,8 @@ export async function conductServerTurn(
     hasMorePrimaryQuestions,
     hasMoreCompetencies,
     elapsedSecondsForTurn,
+    arcStage: question.arcStage,
+    scoringMode: question.scoringMode,
     now,
     evaluatorOptions: input.evaluatorOptions,
     interviewerOptions: input.interviewerOptions

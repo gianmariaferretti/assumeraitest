@@ -123,6 +123,7 @@ test("a minimal well-formed turn body parses", () => {
     turnId: "turn_x",
     candidateAnswer: { answerText: "hello" },
     integritySignals: undefined,
+    asrConfidence: undefined,
   });
 });
 

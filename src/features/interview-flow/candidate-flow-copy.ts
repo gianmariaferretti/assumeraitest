@@ -138,6 +138,16 @@ export type CandidateFlowCopy = {
     readonly needsTest: string;
     readonly testing: string;
     readonly startInterview: string;
+    readonly modeTitle: string;
+    readonly modeIntro: string;
+    readonly modeVoice: string;
+    readonly modeVoiceDetail: string;
+    readonly modeText: string;
+    readonly modeTextDetail: string;
+    readonly startTextInterview: string;
+    readonly accommodationLabel: string;
+    readonly accommodationDetail: string;
+    readonly accommodationPlaceholder: string;
     readonly ready: string;
     readonly testBoth: string;
   };
@@ -599,6 +609,19 @@ const en: CandidateFlowCopy = {
     needsTest: "Needs test",
     testing: "Testing...",
     startInterview: "Start interview",
+    modeTitle: "Choose how you want to interview",
+    modeIntro:
+      "Voice and written text are equal options: same questions, same evaluation, same opportunities. Pick what works best for you.",
+    modeVoice: "Voice interview",
+    modeVoiceDetail: "Speak your answers; we transcribe them. Requires the microphone test above.",
+    modeText: "Written interview",
+    modeTextDetail:
+      "Type your answers at your own pace. No microphone or camera needed — a fully equivalent interview.",
+    startTextInterview: "Start the written interview",
+    accommodationLabel: "I need an accommodation",
+    accommodationDetail:
+      "Tell us what would help (free text). Please do not include medical details — we do not ask for and do not store them. Your request is reviewed by a person, is never shown to companies, and never affects scoring.",
+    accommodationPlaceholder: "Example: I need more time per answer, or larger text.",
     ready: "Everything is ready.",
     testBoth: "Test both devices to continue."
   },
@@ -1100,6 +1123,19 @@ const it: CandidateFlowCopy = {
     needsTest: "Da testare",
     testing: "Test in corso...",
     startInterview: "Avvia colloquio",
+    modeTitle: "Scegli come sostenere il colloquio",
+    modeIntro:
+      "Voce e testo scritto sono opzioni equivalenti: stesse domande, stessa valutazione, stesse opportunità. Scegli quella più adatta a te.",
+    modeVoice: "Colloquio vocale",
+    modeVoiceDetail: "Rispondi a voce; trascriviamo noi. Richiede il test del microfono qui sopra.",
+    modeText: "Colloquio scritto",
+    modeTextDetail:
+      "Scrivi le risposte con i tuoi tempi. Nessun microfono o fotocamera: un colloquio del tutto equivalente.",
+    startTextInterview: "Inizia il colloquio scritto",
+    accommodationLabel: "Ho bisogno di un accomodamento",
+    accommodationDetail:
+      "Dicci cosa ti aiuterebbe (testo libero). Non includere dettagli medici: non li chiediamo e non li conserviamo. La richiesta è letta da una persona, non è mai mostrata alle aziende e non influisce mai sui punteggi.",
+    accommodationPlaceholder: "Esempio: ho bisogno di più tempo per risposta, o di testo più grande.",
     ready: "Tutti gli elementi sono pronti.",
     testBoth: "Testa entrambi i dispositivi per continuare."
   },
@@ -1607,6 +1643,19 @@ const fr: CandidateFlowCopy = {
     needsTest: "Test requis",
     testing: "Test en cours...",
     startInterview: "Demarrer l'entretien",
+    modeTitle: "Choisissez comment passer l'entretien",
+    modeIntro:
+      "Voix et texte ecrit sont des options equivalentes : memes questions, meme evaluation, memes opportunites. Choisissez ce qui vous convient.",
+    modeVoice: "Entretien vocal",
+    modeVoiceDetail: "Repondez a voix haute ; nous transcrivons. Necessite le test du micro ci-dessus.",
+    modeText: "Entretien ecrit",
+    modeTextDetail:
+      "Ecrivez vos reponses a votre rythme. Ni micro ni camera : un entretien totalement equivalent.",
+    startTextInterview: "Commencer l'entretien ecrit",
+    accommodationLabel: "J'ai besoin d'un amenagement",
+    accommodationDetail:
+      "Dites-nous ce qui vous aiderait (texte libre). N'incluez pas de details medicaux : nous ne les demandons pas et ne les conservons pas. La demande est lue par une personne, jamais montree aux entreprises, et n'influence jamais les scores.",
+    accommodationPlaceholder: "Exemple : j'ai besoin de plus de temps par reponse, ou d'un texte plus grand.",
     ready: "Tous les elements sont prets.",
     testBoth: "Testez les deux appareils pour continuer."
   },

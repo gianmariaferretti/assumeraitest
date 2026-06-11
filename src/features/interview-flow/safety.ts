@@ -1,3 +1,4 @@
+import { containsEmployerPresupposingText } from "./platform-neutrality";
 import type {
   InterviewQuestion,
   QuestionBankValidationResult,
@@ -250,9 +251,21 @@ const REQUIRED_DISALLOWED_SIGNALS = [
 ];
 
 function inspectText(questionId: string, field: string, value: string): QuestionSafetyViolation[] {
-  return DISALLOWED_PROMPT_PATTERNS.flatMap(({ patterns, reason }) =>
+  const violations = DISALLOWED_PROMPT_PATTERNS.flatMap(({ patterns, reason }) =>
     patterns.some(({ pattern }) => pattern.test(value)) ? [{ questionId, field, reason }] : []
   );
+
+  // Platform neutrality: the interviewer represents AssumerAI, never an
+  // employer, so no question may presuppose a specific company.
+  if (containsEmployerPresupposingText(value)) {
+    violations.push({
+      questionId,
+      field,
+      reason: "employer-presupposing phrasing (platform interview is employer-neutral)"
+    });
+  }
+
+  return violations;
 }
 
 export function containsDisallowedQuestionText(value: string): boolean {

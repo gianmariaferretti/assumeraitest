@@ -147,10 +147,14 @@ async function readOpenReviewQueue(): Promise<readonly QueueEntry[]> {
     return [];
   }
 
+  // Accommodation requests are intentionally EXCLUDED from this listing: the
+  // queue page is company-context-gated, and accommodation reasons are never
+  // visible to companies (service-role/internal review only).
   const requestsResult = await admin
     .from("human_review_requests")
     .select("request_id,user_id,target_type,target_id,summary,evidence_notes,requested_at")
     .eq("status", "open")
+    .neq("target_type", "accommodation_request")
     .order("requested_at", { ascending: true })
     .limit(50);
   if (requestsResult.error || !requestsResult.data) {

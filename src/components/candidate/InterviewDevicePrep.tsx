@@ -242,12 +242,40 @@ export function InterviewDevicePrep({
         ))}
       </div>
 
-      <form action={COMPLETE_ACTION} className={styles.actions} method="post">
-        <button disabled={!view.readyToStart} type="submit">
-          {copy.startInterview}
-        </button>
-        <span>{view.readyToStart ? copy.ready : copy.testBoth}</span>
-      </form>
+      <section aria-labelledby="interview-mode-title" className={styles.actions}>
+        <h2 id="interview-mode-title">{copy.modeTitle}</h2>
+        <p>{copy.modeIntro}</p>
+
+        {/* Voice: completes the device check and starts in voice mode. */}
+        <form action={COMPLETE_ACTION} method="post">
+          <input name="interview_mode" type="hidden" value="voice" />
+          <button disabled={!view.readyToStart} type="submit">
+            {copy.modeVoice} — {copy.startInterview}
+          </button>
+          <span>{view.readyToStart ? copy.ready : copy.testBoth}</span>
+          <small>{copy.modeVoiceDetail}</small>
+        </form>
+
+        {/* Text: a first-class equivalent mode; no microphone test required. */}
+        <form action="/candidate/interview/mode" method="post">
+          <input name="interview_mode" type="hidden" value="text" />
+          <button type="submit">
+            {copy.modeText} — {copy.startTextInterview}
+          </button>
+          <small>{copy.modeTextDetail}</small>
+          <details>
+            <summary>{copy.accommodationLabel}</summary>
+            <p>{copy.accommodationDetail}</p>
+            <textarea
+              aria-label={copy.accommodationLabel}
+              maxLength={2000}
+              name="accommodation_request"
+              placeholder={copy.accommodationPlaceholder}
+              rows={3}
+            />
+          </details>
+        </form>
+      </section>
     </section>
   );
 }

@@ -38,6 +38,51 @@ System core ───────────► │   (motivation is always req
                          → candidate is matched only once required modules complete
 ```
 
+## The platform-interview principle (one interview, many matches)
+
+AssumerAI runs ONE platform interview per candidate BEFORE any matching; the
+candidate is then matched to MULTIPLE companies and roles. The interviewer is
+a **neutral AssumerAI career interviewer**, never an employer:
+
+- No question may reference a specific company, employer, or "this role"
+  ("our company", "why do you want to work with us", "what do you know about
+  us" are forbidden in every language — enforced at runtime by
+  `platform-neutrality.ts` inside the safety filter, and on every generated
+  interviewer line).
+- Everything company-specific (scoring keys, work-context demands, realistic
+  job preview) lives on the company side and is applied by the **matching
+  engine AFTER the interview**.
+- The interview produces a reusable candidate profile that matching compares
+  against EACH company's declared keys.
+
+## The realistic interview arc
+
+Every interview follows the arc of a real first-round interview
+(`interview-arc.ts` + `canonical-questions.ts`, canonical phrasing in
+EN/IT/FR/DE/ES):
+
+| Stage | Funnel | Scoring | Content |
+|-------|--------|---------|---------|
+| a. Opening | rapport | `baseline_only` | "Tell me about yourself…" — calibrates a communication baseline, NEVER moves a competency score |
+| b. Motivation | rapport | `low_weight` | Role-FAMILY motivation ("Why sales?"), never company motivation; also drivers input |
+| c. Self-awareness bridge | exploration | on-ramp `low_weight`, probe `full` | "Your main strengths?" + mandatory STAR probe — the classic question is the on-ramp, the follow-up carries the score |
+| d. Behavioral core | exploration/challenge | `full` | Existing STAR items in natural recruiter language; mandatory failure/rejection item for sales |
+| e. Situational | challenge | `full` | One generic role-family scenario (never branded with a client company) |
+| f. Closing | closing | `baseline_only` | "Anything to add?" + accurate next steps (profile review → matching → 14-day verdict); candidate questions recorded as a light curiosity signal, never a hard score |
+
+**Why the arc** — procedural justice: candidates judged by a process that
+looks and feels like a fair interview accept its outcomes more readily. The
+warm-up reduces anxiety and therefore measurement noise on everything that
+follows; classic questions ("strengths?") act as STAR on-ramps that preserve
+validity because the scored evidence is the concrete example, not the
+self-description. Seniority calibrates the STAR/SJT mix: juniors get more
+situational items (less past behavior to probe), experienced profiles more
+past-behavioral depth.
+
+The realistic job preview intentionally does NOT happen in the interview — it
+happens at match time on the company side, when there is an actual company to
+preview.
+
 ## The four psychometric functions
 
 | Function | File | Role | Temperature |

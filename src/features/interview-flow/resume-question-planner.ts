@@ -5,6 +5,7 @@ import {
   resolveCandidateInterviewLanguageCode,
   type CandidateInterviewLanguageCode
 } from "./interview-language";
+import { isCanonicalQuestionId } from "./canonical-questions";
 import { assertQuestionBankAllowed, containsDisallowedQuestionText } from "./safety";
 import type {
   InterviewQuestion,
@@ -416,6 +417,12 @@ export function createResumeAwareQuestionPlan(
   const language = resolveCandidateInterviewLanguageCode(interviewLanguage);
   const context = buildContext(roleProfile, candidateProfile);
   const groundedQuestions = questions.map((question) => {
+    // Canonical arc items (opening, motivation, self-awareness, closing) keep
+    // their exact phrasing in the deterministic fallback: only the LLM planner
+    // may lightly personalize them.
+    if (isCanonicalQuestionId(question.id)) {
+      return { ...question };
+    }
     const evidenceRequirements = moduleEvidenceRequirements(question, context);
     const expectedSignals = unique([
       ...question.expectedSignals,

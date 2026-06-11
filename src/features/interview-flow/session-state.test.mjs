@@ -35,13 +35,24 @@ function newSession(overrides = {}) {
 }
 
 function completeModule(session, moduleId, answeredAt) {
-  const moduleSession = session.module_sessions[moduleId];
-  return recordResponseForModule(session, moduleId, {
-    questionId: moduleSession.currentQuestionId,
-    answerText:
-      "When I was at Acme in 2023 I owned outbound for DACH. I built a three-touch sequence and booked 14 meetings, a 30% lift.",
-    answeredAt,
-  });
+  // The realistic arc (Phase 11) gives modules multiple questions (canonical
+  // opening/motivation/self-awareness/closing items): answer them all.
+  let current = session;
+  let guard = 0;
+  while (current.module_sessions[moduleId].state !== "completed") {
+    const moduleSession = current.module_sessions[moduleId];
+    current = recordResponseForModule(current, moduleId, {
+      questionId: moduleSession.currentQuestionId,
+      answerText:
+        "When I was at Acme in 2023 I owned outbound for DACH. I built a three-touch sequence and booked 14 meetings, a 30% lift.",
+      answeredAt,
+    });
+    guard += 1;
+    if (guard > 25) {
+      throw new Error(`module ${moduleId} did not complete`);
+    }
+  }
+  return current;
 }
 
 test("a fresh session has independent not-started module sub-sessions", () => {

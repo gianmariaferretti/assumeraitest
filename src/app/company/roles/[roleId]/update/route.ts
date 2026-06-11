@@ -5,6 +5,7 @@ import {
   resolveCompanyRouteContext,
   validateCompanyRoleIntake
 } from "@/features/company-workspace";
+import { readWorkStyleKeyFromFormData } from "@/features/scoring/work-style/form";
 
 export async function POST(
   request: NextRequest,
@@ -68,6 +69,9 @@ export async function POST(
     );
   }
 
+  // Phase 13: company-declared work-style expectations, stored versioned
+  // on the role calibration (judged at match time, never in the interview).
+  const workStyleKey = readWorkStyleKeyFromFormData(formData);
   const now = new Date().toISOString();
   const result = await companyContext.supabase
     .from("company_roles")
@@ -77,7 +81,10 @@ export async function POST(
       work_modes: validation.value.work_modes,
       requirements: validation.value.requirements,
       daily_work_reality: validation.value.daily_work_reality,
-      calibration: validation.value.calibration,
+      calibration: {
+      ...validation.value.calibration,
+      ...(workStyleKey ? { work_style_key: workStyleKey } : {})
+    },
       role_payload: validation.value,
       updated_at: now
     })

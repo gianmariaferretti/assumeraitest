@@ -1,3 +1,4 @@
+import type { WorkStyleKey, WorkStyleProfile } from "../scoring/work-style/types";
 import type { MatchDimensionName, MatchWeightSet } from "./weights";
 
 export const MATCHING_VERSION = "company-matching-v0";
@@ -134,6 +135,8 @@ export interface RoleProfile {
     weights?: Partial<Record<MatchDimensionName, number>> & Record<string, number | undefined>;
     required_evidence?: string[];
     interview_modules?: string[];
+    /** Company-declared work-style expectations (Phase 13), versioned. */
+    work_style_key?: WorkStyleKey;
     created_by?: string;
     created_at?: string;
     audit_event_id?: string;
@@ -239,6 +242,8 @@ export interface MatchingScoreInput {
    * dimension on top of it.
    */
   weightSet?: MatchWeightSet;
+  /** Candidate's descriptive work-style profile (Phase 13). */
+  workStyleProfile?: WorkStyleProfile;
   generatedAt?: string;
   version?: string;
   auditEventId?: string;
