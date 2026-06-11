@@ -3,6 +3,7 @@ import {
   canonicalEntriesForStage,
   isCanonicalQuestionId,
   resolveCanonicalLanguage,
+  workStyleEntries,
   type CanonicalLanguage,
   type CanonicalSeniorityBand
 } from "./canonical-questions";
@@ -133,6 +134,11 @@ export function buildInterviewArcQuestions(input: BuildInterviewArcInput): Inter
     return false;
   });
   const situationalExtras = mix.extraSituational ? canonical("situational") : [];
+  // Work-style SJT dilemmas (Phase 13): always included, descriptive only —
+  // classified by the work-style evaluator, judged per-company at match time.
+  const workStyle = workStyleEntries().map((entry) =>
+    buildCanonicalQuestion(entry, language, input.roleFamily)
+  );
 
   return [
     ...canonical("opening"),
@@ -142,6 +148,7 @@ export function buildInterviewArcQuestions(input: BuildInterviewArcInput): Inter
     ...behavioralExtras,
     ...situational,
     ...situationalExtras,
+    ...workStyle,
     ...canonical("closing")
   ];
 }

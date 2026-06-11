@@ -25,6 +25,10 @@ import {
 } from "@/features/interview-flow/integrity-signals";
 import { computeVerdictDueAt } from "@/features/matching/match-sla";
 import {
+  readWorkStyleKey,
+  readWorkStyleProfile
+} from "@/features/scoring/work-style/types";
+import {
   candidateMatchNotificationEmail,
   candidateVerdictNotificationEmail,
   resolveEmailProvider,
@@ -925,6 +929,17 @@ export async function materializeCandidateMatchesForCandidate(
       const weightSet = await loadActiveMatchWeights(
         adminClient as unknown as MatchWeightSetClient
       );
+      // Phase 13: the candidate's descriptive work-style profile feeds the
+      // values-alignment dimension (judged against each company's key).
+      const workStyleResult = await adminClient
+        .from("work_style_profiles")
+        .select("profile")
+        .eq("user_id", context.user.id)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      const workStyleProfile = readWorkStyleProfile(
+        (asRows(workStyleResult.error ? [] : workStyleResult.data)[0] ?? {}).profile
+      );
       const upserts = asRows(rolesResult.data)
         .map((roleRow) =>
           buildCandidateVisibleMatchUpsert({
@@ -933,6 +948,7 @@ export async function materializeCandidateMatchesForCandidate(
             workspaceRow:
               workspaceByCompanyId.get(readString(roleRow.company_id) ?? "") ?? {},
             weightSet,
+            workStyleProfile,
             existingRow: existingByMatchId.get(
               `match_${sanitizeId(context.user.id)}_${sanitizeId(readString(roleRow.role_id) ?? "")}`
             )
@@ -1667,12 +1683,14 @@ function buildCandidateVisibleMatchUpsert({
   roleRow,
   workspaceRow,
   weightSet,
+  workStyleProfile,
   existingRow
 }: {
   readonly candidate: CandidateProfile;
   readonly roleRow: Record<string, unknown>;
   readonly workspaceRow: Record<string, unknown>;
   readonly weightSet: MatchWeightSet;
+  readonly workStyleProfile?: ReturnType<typeof readWorkStyleProfile>;
   readonly existingRow: Record<string, unknown> | undefined;
 }): Record<string, unknown> | null {
   const existingStatus = readString(existingRow?.status);
@@ -1691,6 +1709,7 @@ function buildCandidateVisibleMatchUpsert({
     role,
     company,
     weightSet,
+    workStyleProfile,
     matchId,
     inputHash: `candidate-visible:${candidate.candidate_id}:${role.role_id}`
   });
@@ -1819,7 +1838,9 @@ function buildMatchingRoleProfile(row: Record<string, unknown>): RoleProfile {
         ? normalizeScoreBars(calibration.score_bars)
         : {},
       required_evidence: readStringArray(calibration.required_evidence),
-      interview_modules: readStringArray(calibration.interview_modules)
+      interview_modules: readStringArray(calibration.interview_modules),
+      // Phase 13: company-declared work-style expectations (versioned).
+      work_style_key: readWorkStyleKey(calibration.work_style_key)
     }
   };
 }

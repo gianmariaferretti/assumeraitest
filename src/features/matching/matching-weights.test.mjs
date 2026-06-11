@@ -84,11 +84,11 @@ function clientReturning(result) {
 test("the active weight set is loaded from the table, with in-code fallback", async () => {
   const active = await loadActiveMatchWeights(
     clientReturning({
-      data: [{ version: "match-weights-v1", weights: CUSTOM_WEIGHTS }],
+      data: [{ version: "match-weights-test", weights: CUSTOM_WEIGHTS }],
       error: null,
     }),
   );
-  assert.equal(active.version, "match-weights-v1");
+  assert.equal(active.version, "match-weights-test");
   assert.equal(active.weights.InterviewEvidenceFit, 1);
 
   const onError = await loadActiveMatchWeights(
@@ -124,11 +124,11 @@ test("a custom weight set changes the score and is recorded as weights_version",
   const defaultMatch = createCompanyMatch(input);
   const customMatch = createCompanyMatch({
     ...input,
-    weightSet: { version: "match-weights-v1", weights: CUSTOM_WEIGHTS },
+    weightSet: { version: "match-weights-test", weights: CUSTOM_WEIGHTS },
   });
 
-  assert.equal(defaultMatch.weights_version, "match-weights-v0");
-  assert.equal(customMatch.weights_version, "match-weights-v1");
+  assert.equal(defaultMatch.weights_version, "match-weights-v1");
+  assert.equal(customMatch.weights_version, "match-weights-test");
   // All weight on InterviewEvidenceFit -> the match score IS that dimension.
   assert.equal(customMatch.match_score, customMatch.dimensions.InterviewEvidenceFit.score);
   assert.notEqual(customMatch.match_score, defaultMatch.match_score);
@@ -148,29 +148,42 @@ test("role calibration overrides apply on top of the versioned base set", () => 
 // Migration seed stays in lockstep with the in-code defaults
 // ---------------------------------------------------------------------------
 
-test("matching_weight_sets is service-role only and seeds the in-code defaults", () => {
+test("matching_weight_sets is service-role only and the ACTIVE seed equals the in-code defaults", () => {
   const migrationsDir = path.join(rootDir, "supabase", "migrations");
-  const migrationName = readdirSync(migrationsDir).find((name) =>
+  const v0Name = readdirSync(migrationsDir).find((name) =>
     name.includes("matching_weight_sets"),
   );
-  assert.ok(migrationName, "expected the matching_weight_sets migration");
-  const migration = readFileSync(path.join(migrationsDir, migrationName), "utf8");
+  assert.ok(v0Name, "expected the matching_weight_sets migration");
+  const v0Migration = readFileSync(path.join(migrationsDir, v0Name), "utf8");
 
-  assert.match(migration, /create table if not exists public\.matching_weight_sets/);
-  assert.match(migration, /alter table public\.matching_weight_sets enable row level security/);
+  assert.match(v0Migration, /create table if not exists public\.matching_weight_sets/);
+  assert.match(v0Migration, /alter table public\.matching_weight_sets enable row level security/);
   assert.match(
-    migration,
+    v0Migration,
     /revoke all privileges on table public\.matching_weight_sets from anon, authenticated/,
   );
-  assert.doesNotMatch(migration, /create policy/);
-  assert.match(migration, /matching_weight_sets_single_active_idx/);
+  assert.doesNotMatch(v0Migration, /create policy/);
+  assert.match(v0Migration, /matching_weight_sets_single_active_idx/);
 
-  // The seeded JSON must equal DEFAULT_MATCH_WEIGHTS exactly.
-  const seedJson = migration.match(/'(\{[\s\S]*?\})'::jsonb/)?.[1];
-  assert.ok(seedJson, "expected a seed weights JSON literal");
+  // Phase 13: match-weights-v1 (with ValuesAlignmentFit) is the active set and
+  // its seeded JSON must equal the in-code DEFAULT_MATCH_WEIGHTS exactly.
+  const v1Name = readdirSync(migrationsDir).find((name) =>
+    name.includes("work_style_profiles"),
+  );
+  assert.ok(v1Name, "expected the work_style_profiles migration");
+  const v1Migration = readFileSync(path.join(migrationsDir, v1Name), "utf8");
+  const seedJson = v1Migration.match(/'match-weights-v1',\s*'(\{[\s\S]*?\})'::jsonb/)?.[1];
+  assert.ok(seedJson, "expected the v1 seed weights JSON literal");
   assert.deepEqual(JSON.parse(seedJson), DEFAULT_MATCH_WEIGHTS);
-  assert.match(migration, /'match-weights-v0'/);
-  assert.match(migration, /true,/);
+  assert.match(v1Migration, /'match-weights-v1'/);
+  assert.match(
+    v1Migration,
+    /update public\.matching_weight_sets set active = false where version = 'match-weights-v0'/,
+  );
+  assert.match(
+    v1Migration,
+    /update public\.matching_weight_sets set active = true where version = 'match-weights-v1'/,
+  );
 });
 
 test("the materializer loads the active set once and records weightsVersion", () => {

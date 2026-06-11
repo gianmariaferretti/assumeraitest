@@ -22,7 +22,10 @@ export type CohortDimension =
   // Phase 12: text-mode candidates and low-ASR-confidence cohorts must not
   // show systematically different decision rates without investigation.
   | "interview_mode"
-  | "asr_confidence_band";
+  | "asr_confidence_band"
+  // Phase 13: the values-alignment contribution is monitored as its own
+  // dimension so declared work-style keys cannot become a hidden proxy.
+  | "values_alignment_band";
 
 export const COHORT_DIMENSIONS: readonly CohortDimension[] = [
   "role_family",
@@ -32,6 +35,7 @@ export const COHORT_DIMENSIONS: readonly CohortDimension[] = [
   "city_class",
   "interview_mode",
   "asr_confidence_band",
+  "values_alignment_band",
 ];
 
 export const FOUR_FIFTHS_THRESHOLD = 0.8;

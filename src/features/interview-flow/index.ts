@@ -92,6 +92,8 @@ export {
   CANONICAL_QUESTION_BANK,
   canonicalEntriesForStage,
   isCanonicalQuestionId,
+  isWorkStyleQuestionId,
+  workStyleEntries,
   resolveCanonicalLanguage,
   type CanonicalLanguage,
   type CanonicalQuestionEntry,

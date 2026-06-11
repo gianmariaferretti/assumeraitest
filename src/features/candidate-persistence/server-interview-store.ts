@@ -78,6 +78,16 @@ export interface ServerInterviewStore {
     moduleId: string,
     averageConfidence: number
   ): Promise<CandidatePersistenceResult>;
+  /** Candidate's descriptive work-style profile for a session (Phase 13). */
+  readWorkStyleProfile(
+    candidateId: string,
+    interviewSessionId: string
+  ): Promise<Record<string, unknown> | undefined>;
+  saveWorkStyleProfile(
+    candidateId: string,
+    interviewSessionId: string,
+    profile: Record<string, unknown>
+  ): Promise<CandidatePersistenceResult>;
   /** Persist one turn's honest integrity signals (service-role write only). */
   recordIntegritySignals(
     candidateId: string,
@@ -393,6 +403,36 @@ export function createSupabaseServerInterviewStore(admin: AdminClient): ServerIn
       );
     },
 
+    async readWorkStyleProfile(candidateId, interviewSessionId) {
+      const { data, error } = await admin
+        .from("work_style_profiles")
+        .select("profile")
+        .eq("user_id", candidateId)
+        .eq("interview_session_id", interviewSessionId)
+        .maybeSingle();
+      if (error || !data) {
+        return undefined;
+      }
+      const profile = (data as Record<string, unknown>).profile;
+      return profile && typeof profile === "object" && !Array.isArray(profile)
+        ? (profile as Record<string, unknown>)
+        : undefined;
+    },
+
+    async saveWorkStyleProfile(candidateId, interviewSessionId, profile) {
+      return runWrite(
+        admin.from("work_style_profiles").upsert(
+          {
+            user_id: candidateId,
+            interview_session_id: interviewSessionId,
+            profile,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: "user_id,interview_session_id" }
+        )
+      );
+    },
+
     async recordIntegritySignals(candidateId, row) {
       return runWrite(
         admin.from("integrity_signals").upsert(
@@ -466,6 +506,7 @@ type MemoryCandidateState = {
   readonly turns: Map<string, TurnLedgerStatus>;
   readonly asrConfidences: Map<string, number>;
   readonly asrReviewFlags: Set<string>;
+  readonly workStyleProfiles: Map<string, Record<string, unknown>>;
 };
 
 const memoryState = new Map<string, MemoryCandidateState>();
@@ -473,7 +514,7 @@ const memoryState = new Map<string, MemoryCandidateState>();
 function memoryFor(candidateId: string): MemoryCandidateState {
   let state = memoryState.get(candidateId);
   if (!state) {
-    state = { rows: new Map(), turns: new Map(), asrConfidences: new Map(), asrReviewFlags: new Set() };
+    state = { rows: new Map(), turns: new Map(), asrConfidences: new Map(), asrReviewFlags: new Set(), workStyleProfiles: new Map() };
     memoryState.set(candidateId, state);
   }
   return state;
@@ -535,6 +576,15 @@ export function createInMemoryServerInterviewStore(): ServerInterviewStore {
 
     async recordAsrReviewFlag(candidateId, interviewSessionId, moduleId) {
       memoryFor(candidateId).asrReviewFlags.add(`${interviewSessionId}:${moduleId}`);
+      return { status: "local_fallback" };
+    },
+
+    async readWorkStyleProfile(candidateId, interviewSessionId) {
+      return memoryFor(candidateId).workStyleProfiles.get(interviewSessionId);
+    },
+
+    async saveWorkStyleProfile(candidateId, interviewSessionId, profile) {
+      memoryFor(candidateId).workStyleProfiles.set(interviewSessionId, profile);
       return { status: "local_fallback" };
     },
 

@@ -7,3 +7,4 @@ export { getCompanyBarFit } from "./company-bar-fit";
 export { getGrowthPotentialFit } from "./growth-potential-fit";
 export { getEducationCredentialFit } from "./education-credential-fit";
 export { getMatchConfidence } from "./match-confidence";
+export { getValuesAlignmentFit } from "./values-alignment-fit";

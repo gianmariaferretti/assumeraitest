@@ -217,6 +217,44 @@ export const CANONICAL_QUESTION_BANK: readonly CanonicalQuestionEntry[] = [
     evidenceRequirements: ["situational judgment under ambiguous instructions"]
   },
   {
+    // Work-style SJT (Phase 13): descriptive at interview time — there is NO
+    // right answer here. The work-style evaluator classifies the style;
+    // normative judgment happens per-company at match time. baseline_only:
+    // these dilemmas never enter BARS competency scores.
+    id: "canonical_workstyle_autonomy_speed",
+    stage: "situational",
+    scoringMode: "baseline_only",
+    moduleId: "case",
+    timeTargetSeconds: 120,
+    prompts: {
+      en: "You spot a small but real problem in something already delivered. The person who could approve a fix is away for two days, and a deadline of yours is today. There is no right answer here — walk me through what you would actually do, and why.",
+      it: "Noti un problema piccolo ma reale in qualcosa di già consegnato. La persona che potrebbe approvare la correzione è assente per due giorni e una tua scadenza è oggi. Non c'è una risposta giusta: mi racconti cosa farebbe davvero, e perché.",
+      fr: "Vous repérez un problème petit mais réel dans un livrable déjà remis. La personne qui pourrait approuver la correction est absente deux jours, et l'une de vos échéances tombe aujourd'hui. Il n'y a pas de bonne réponse : décrivez-moi ce que vous feriez vraiment, et pourquoi.",
+      de: "Sie entdecken ein kleines, aber echtes Problem in etwas bereits Geliefertem. Die Person, die eine Korrektur freigeben könnte, ist zwei Tage abwesend, und eine Ihrer Fristen ist heute. Es gibt keine richtige Antwort — beschreiben Sie mir, was Sie wirklich tun würden, und warum.",
+      es: "Detecta un problema pequeño pero real en algo ya entregado. La persona que podría aprobar la corrección está ausente dos días y una de sus fechas límite es hoy. No hay respuesta correcta: cuénteme qué haría realmente, y por qué."
+    },
+    rubric: ["Descriptive only: classifies work style (autonomy↔escalation, speed↔thoroughness); never a quality score."],
+    expectedSignals: ["How the candidate actually balances autonomy, escalation, speed, and thoroughness"],
+    evidenceRequirements: ["work-style evidence: described real course of action"]
+  },
+  {
+    id: "canonical_workstyle_collaboration_structure",
+    stage: "situational",
+    scoringMode: "baseline_only",
+    moduleId: "case",
+    timeTargetSeconds: 120,
+    prompts: {
+      en: "You inherit a task with a detailed checklist from whoever did it before you, but you can see a faster way that skips several steps. A colleague offers to split the work with you. Again, no right answer — what would you actually do?",
+      it: "Eredita un compito con una checklist dettagliata da chi lo faceva prima di lei, ma vede un modo più rapido che salta diversi passaggi. Un collega si offre di dividere il lavoro. Anche qui nessuna risposta giusta: cosa farebbe davvero?",
+      fr: "Vous héritez d'une tâche avec une checklist détaillée laissée par votre prédécesseur, mais vous voyez une méthode plus rapide qui saute plusieurs étapes. Un collègue propose de partager le travail. Là encore, pas de bonne réponse : que feriez-vous vraiment ?",
+      de: "Sie übernehmen eine Aufgabe mit einer detaillierten Checkliste Ihres Vorgängers, sehen aber einen schnelleren Weg, der mehrere Schritte überspringt. Eine Kollegin bietet an, die Arbeit zu teilen. Auch hier gibt es keine richtige Antwort — was würden Sie wirklich tun?",
+      es: "Hereda una tarea con una checklist detallada de quien la hacía antes, pero ve una forma más rápida que se salta varios pasos. Un colega se ofrece a repartir el trabajo. De nuevo, sin respuesta correcta: ¿qué haría realmente?"
+    },
+    rubric: ["Descriptive only: classifies work style (individual↔collaboration, structure↔improvisation); never a quality score."],
+    expectedSignals: ["How the candidate actually relates to structure, improvisation, and collaboration"],
+    evidenceRequirements: ["work-style evidence: described real course of action"]
+  },
+  {
     id: "canonical_closing_open",
     stage: "closing",
     scoringMode: "baseline_only",
@@ -290,6 +328,16 @@ export function isCanonicalQuestionId(questionId: string): boolean {
   return questionId.startsWith("canonical_");
 }
 
+/** True for work-style SJT dilemmas (descriptive items, Phase 13). */
+export function isWorkStyleQuestionId(questionId: string): boolean {
+  return questionId.startsWith("canonical_workstyle_");
+}
+
+/** The work-style SJT dilemmas — always included, in every interview. */
+export function workStyleEntries(): CanonicalQuestionEntry[] {
+  return CANONICAL_QUESTION_BANK.filter((entry) => isWorkStyleQuestionId(entry.id));
+}
+
 export interface CanonicalSelection {
   readonly roleFamily: RoleFamily;
   readonly seniority: CanonicalSeniorityBand | undefined;
@@ -301,17 +349,18 @@ export function canonicalEntriesForStage(
   stage: CanonicalQuestionEntry["stage"],
   selection: Pick<CanonicalSelection, "roleFamily" | "seniority">
 ): CanonicalQuestionEntry[] {
-  const familySpecific = CANONICAL_QUESTION_BANK.filter(
+  // Work-style dilemmas are selected separately (always included) and never
+  // participate in the family/generic substitution logic.
+  const stageEntries = CANONICAL_QUESTION_BANK.filter(
+    (entry) => entry.stage === stage && !isWorkStyleQuestionId(entry.id)
+  );
+  const familySpecific = stageEntries.filter(
     (entry) =>
-      entry.stage === stage &&
       entry.roleFamilies?.includes(selection.roleFamily) &&
       seniorityApplies(entry, selection.seniority)
   );
-  const generic = CANONICAL_QUESTION_BANK.filter(
-    (entry) =>
-      entry.stage === stage &&
-      !entry.roleFamilies &&
-      seniorityApplies(entry, selection.seniority)
+  const generic = stageEntries.filter(
+    (entry) => !entry.roleFamilies && seniorityApplies(entry, selection.seniority)
   );
 
   // A family-specific variant replaces its generic sibling for the stage

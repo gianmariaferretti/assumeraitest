@@ -151,6 +151,48 @@ export function CompanyRoleWizard({
           </label>
         </section>
 
+        <section aria-labelledby="work-style-key-title" className="role-wizard-section">
+          <h2 id="work-style-key-title">Work-style expectations (optional)</h2>
+          <p>
+            Position your team on each dimension (-100 .. 100) and anchor it
+            with a concrete statement in your own words. Neither pole is
+            better: candidates are compared against YOUR declared expectations
+            at match time — values alignment on declared work-style
+            dimensions, never a personality judgment.
+          </p>
+          {(
+            [
+              ["autonomy_escalation", "Decides autonomously (-100) ↔ Escalates for alignment (+100)"],
+              ["speed_thoroughness", "Ships fast (-100) ↔ Verifies thoroughly (+100)"],
+              ["individual_collaboration", "Individual drive (-100) ↔ Collaborates first (+100)"],
+              ["risk_caution", "Tolerates risk (-100) ↔ Prefers caution (+100)"],
+              ["structure_improvisation", "Follows structure (-100) ↔ Improvises (+100)"]
+            ] as const
+          ).map(([dimension, label]) => (
+            <fieldset key={dimension}>
+              <legend>{label}</legend>
+              <label>
+                Position
+                <input
+                  max={100}
+                  min={-100}
+                  name={`work_style.${dimension}.position`}
+                  step={10}
+                  type="number"
+                />
+              </label>
+              <label>
+                In your words (e.g. &quot;here, you&apos;d ship and document&quot;)
+                <input
+                  maxLength={300}
+                  name={`work_style.${dimension}.statement`}
+                  placeholder="Concrete behavioral statement"
+                />
+              </label>
+            </fieldset>
+          ))}
+        </section>
+
         <div className="role-submit-row">
           <button type="submit">
             {copy.submit}

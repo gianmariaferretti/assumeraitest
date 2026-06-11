@@ -17,10 +17,16 @@ import {
 import {
   averageAsrConfidence,
   conductServerTurn,
+  isWorkStyleQuestionId,
   parseServerTurnRequestBody,
   readAsrThresholdFromEnv,
   shouldRouteForAsrReview
 } from "@/features/interview-flow";
+import {
+  evaluateWorkStyle,
+  mergeWorkStyleProfiles
+} from "@/features/scoring/work-style/evaluator";
+import { readWorkStyleProfile } from "@/features/scoring/work-style/types";
 import { checkLlmBudget, secondsUntilUtcMidnight } from "@/lib/llm-budget";
 import { logInfo, logWarn } from "@/lib/log";
 import {
@@ -222,6 +228,33 @@ export async function POST(request: NextRequest) {
       result.session.sessionId,
       result.nextTurn
     );
+  }
+
+  // Work-style SJT dilemmas (Phase 13): descriptive classification only —
+  // there is no right answer at interview time; normative judgment happens
+  // per-company in matching. Failures here never block the turn.
+  if (result.kind === "turn_completed" && isWorkStyleQuestionId(result.answeredQuestion.id)) {
+    try {
+      const evaluation = await evaluateWorkStyle({
+        questionId: result.answeredQuestion.id,
+        questionText: result.answeredQuestion.prompt,
+        answerText: parsed.value.candidateAnswer.answerText
+      });
+      const existing = readWorkStyleProfile(
+        await store.readWorkStyleProfile(candidateContext.candidateId, result.session.sessionId)
+      );
+      const merged = mergeWorkStyleProfiles(existing, evaluation);
+      await store.saveWorkStyleProfile(
+        candidateContext.candidateId,
+        result.session.sessionId,
+        merged as unknown as Record<string, unknown>
+      );
+    } catch (error) {
+      logWarn("work_style_evaluation_failed", {
+        ...logContext,
+        detail: error instanceof Error ? error.message : "unknown_error"
+      });
+    }
   }
 
   // Persist the per-turn honest signals (service-role write; reviewer context

@@ -8,13 +8,14 @@ import { loadFromRepoRoot } from "../../test-helpers/ts-loader.mjs";
 import { SCENARIOS } from "./matching-engine-fixtures.mjs";
 
 /**
- * Characterization lock for the matching-engine refactor (Phase 10).
+ * Characterization lock for the matching engine.
  *
- * The snapshot file was generated from the PRE-refactor engine on the frozen
- * fixtures. The refactored engine must reproduce it identically. The only
- * permitted difference is the ADDITIVE weights_version field introduced by
- * the versioned-weights work; it is asserted separately and stripped before
- * the deep comparison.
+ * Phase 10: the snapshot was generated from the pre-refactor engine and the
+ * split had to reproduce it byte-for-byte (it did). Phase 13 INTENTIONALLY
+ * moved the baseline by adding the ValuesAlignmentFit dimension ("values
+ * alignment on declared work-style dimensions", neutral 50 when no key or
+ * profile exists) — the snapshot was regenerated at that point and locks the
+ * new baseline. weights_version stays an additive field asserted separately.
  */
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

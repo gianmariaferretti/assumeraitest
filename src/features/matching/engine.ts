@@ -10,6 +10,7 @@ import {
   getLanguageLocationAvailabilityFit,
   getMatchConfidence,
   getRoleSkillFit,
+  getValuesAlignmentFit,
 } from "./dimensions";
 import {
   MATCHING_MODEL_VERSION,
@@ -226,6 +227,7 @@ function buildDimensions(
     GrowthPotentialFit: getGrowthPotentialFit(input),
     EducationCredentialFit: getEducationCredentialFit(input),
     MatchConfidence: getMatchConfidence(input, hardGates),
+    ValuesAlignmentFit: getValuesAlignmentFit(input),
   };
 
   return Object.fromEntries(
