@@ -2,6 +2,7 @@ import {
   buildCanonicalQuestion,
   canonicalEntriesForStage,
   isCanonicalQuestionId,
+  jobDriverEntries,
   resolveCanonicalLanguage,
   workStyleEntries,
   type CanonicalLanguage,
@@ -139,10 +140,16 @@ export function buildInterviewArcQuestions(input: BuildInterviewArcInput): Inter
   const workStyle = workStyleEntries().map((entry) =>
     buildCanonicalQuestion(entry, language, input.roleFamily)
   );
+  // Job-driver items (Phase 14): always included, descriptive and flag-only —
+  // revealed preferences feed transparency insights, never a score.
+  const jobDrivers = jobDriverEntries().map((entry) =>
+    buildCanonicalQuestion(entry, language, input.roleFamily)
+  );
 
   return [
     ...canonical("opening"),
     ...canonical("motivation"),
+    ...jobDrivers,
     ...canonical("self_awareness"),
     ...behavioralCore,
     ...behavioralExtras,

@@ -193,6 +193,52 @@ export function CompanyRoleWizard({
           ))}
         </section>
 
+        <section aria-labelledby="driver-context-title" className="role-wizard-section">
+          <h2 id="driver-context-title">Work-context reality (optional)</h2>
+          <p>
+            Declare honestly how much the day-to-day actually offers on each
+            career driver (0 .. 100) with a concrete note in your own words.
+            This is used only for a realistic job preview and open-discussion
+            flags at match time — it never carries or influences a score. The
+            work–life balance entry is shown to candidates as preview only and
+            is never compared against them (hard-coded anti-proxy guardrail).
+          </p>
+          {(
+            [
+              ["technical_mastery", "Deep technical mastery (specialist growth)"],
+              ["leadership_track", "Leadership track (managing people)"],
+              ["autonomy_independence", "Autonomy and independence"],
+              ["security_stability", "Security and stability"],
+              ["entrepreneurial_creation", "Building new things from scratch"],
+              ["service_impact", "Service and impact on others"],
+              ["pure_challenge", "Hard problems (pure challenge)"],
+              ["lifestyle_balance", "Work-life balance reality (travel, hours, on-call)"]
+            ] as const
+          ).map(([driver, label]) => (
+            <fieldset key={driver}>
+              <legend>{label}</legend>
+              <label>
+                How much the day-to-day offers (0 .. 100)
+                <input
+                  max={100}
+                  min={0}
+                  name={`driver_context.${driver}.level`}
+                  step={10}
+                  type="number"
+                />
+              </label>
+              <label>
+                In your words (e.g. &quot;two releases a week, little long-range planning&quot;)
+                <input
+                  maxLength={300}
+                  name={`driver_context.${driver}.note`}
+                  placeholder="Concrete day-to-day reality"
+                />
+              </label>
+            </fieldset>
+          ))}
+        </section>
+
         <div className="role-submit-row">
           <button type="submit">
             {copy.submit}

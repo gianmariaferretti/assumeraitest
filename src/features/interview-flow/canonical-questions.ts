@@ -109,6 +109,45 @@ export const CANONICAL_QUESTION_BANK: readonly CanonicalQuestionEntry[] = [
     evidenceRequirements: ["candidate-stated priorities for the next job"]
   },
   {
+    // Job-drivers trade-off item (Phase 14): descriptive at interview time —
+    // there is NO right answer and no correct set of drivers. The drivers
+    // evaluator extracts revealed preferences; at match time they produce
+    // flag-only insights and a realistic job preview, never a score.
+    id: "canonical_drivers_tradeoff",
+    stage: "motivation",
+    scoringMode: "baseline_only",
+    moduleId: "motivation",
+    timeTargetSeconds: 90,
+    prompts: {
+      en: "Imagine two offers on the table with identical pay: one is a stable, well-defined role where you would go deeper in what you already do best; the other is a new, uncertain initiative with much more freedom and much more risk. There is no right answer — which would you take, and what would you be giving up?",
+      it: "Immagini due offerte sul tavolo, a parità di stipendio: una è un ruolo stabile e ben definito in cui approfondire ciò che già sa fare meglio; l'altra è un'iniziativa nuova e incerta, con molta più libertà e molto più rischio. Non c'è una risposta giusta: quale sceglierebbe, e a cosa rinuncerebbe?",
+      fr: "Imaginez deux offres sur la table, à salaire identique : l'une est un poste stable et bien défini où approfondir ce que vous faites déjà de mieux ; l'autre est une initiative nouvelle et incertaine, avec beaucoup plus de liberté et beaucoup plus de risque. Il n'y a pas de bonne réponse : laquelle choisiriez-vous, et à quoi renonceriez-vous ?",
+      de: "Stellen Sie sich zwei Angebote bei gleichem Gehalt vor: eines ist eine stabile, klar umrissene Rolle, in der Sie das vertiefen, was Sie bereits am besten können; das andere ist ein neues, ungewisses Vorhaben mit viel mehr Freiheit und viel mehr Risiko. Es gibt keine richtige Antwort — welches würden Sie nehmen, und worauf würden Sie verzichten?",
+      es: "Imagine dos ofertas sobre la mesa, con el mismo salario: una es un puesto estable y bien definido donde profundizar en lo que ya sabe hacer mejor; la otra es una iniciativa nueva e incierta, con mucha más libertad y mucho más riesgo. No hay respuesta correcta: ¿cuál elegiría y a qué renunciaría?"
+    },
+    rubric: ["Descriptive only: surfaces career drivers via an explicit trade-off; never a quality score."],
+    expectedSignals: ["Which drivers the candidate trades off, and how they reason about the cost"],
+    evidenceRequirements: ["driver evidence: explicit trade-off choice and what is given up"]
+  },
+  {
+    id: "canonical_drivers_star",
+    stage: "motivation",
+    scoringMode: "baseline_only",
+    moduleId: "motivation",
+    timeTargetSeconds: 120,
+    prompts: {
+      // Revealed preference: a real past fork, not a stated preference.
+      en: "Tell me about a real fork in your path — a time you chose between two jobs, projects, or directions. What did you actually choose, what did you give up, and why?",
+      it: "Mi racconti un bivio reale nel suo percorso: una volta in cui ha scelto tra due lavori, progetti o direzioni. Cosa ha scelto davvero, a cosa ha rinunciato, e perché?",
+      fr: "Racontez-moi un vrai croisement dans votre parcours : une fois où vous avez choisi entre deux emplois, projets ou directions. Qu'avez-vous réellement choisi, à quoi avez-vous renoncé, et pourquoi ?",
+      de: "Erzählen Sie mir von einer echten Weggabelung in Ihrem Werdegang: einem Moment, in dem Sie zwischen zwei Stellen, Projekten oder Richtungen gewählt haben. Was haben Sie tatsächlich gewählt, worauf haben Sie verzichtet, und warum?",
+      es: "Cuénteme una bifurcación real en su trayectoria: una vez en que eligió entre dos trabajos, proyectos o direcciones. ¿Qué eligió realmente, a qué renunció y por qué?"
+    },
+    rubric: ["Descriptive only: revealed career preference from a real past choice; never a quality score."],
+    expectedSignals: ["Drivers revealed by a real choice: what was chosen and what was given up"],
+    evidenceRequirements: ["driver evidence: real past fork, choice made, and reasoning"]
+  },
+  {
     id: "canonical_self_awareness",
     stage: "self_awareness",
     scoringMode: "low_weight",
@@ -338,6 +377,16 @@ export function workStyleEntries(): CanonicalQuestionEntry[] {
   return CANONICAL_QUESTION_BANK.filter((entry) => isWorkStyleQuestionId(entry.id));
 }
 
+/** True for job-driver items (trade-off + revealed-preference STAR, Phase 14). */
+export function isDriversQuestionId(questionId: string): boolean {
+  return questionId.startsWith("canonical_drivers_");
+}
+
+/** The job-driver items — always included, in every interview. */
+export function jobDriverEntries(): CanonicalQuestionEntry[] {
+  return CANONICAL_QUESTION_BANK.filter((entry) => isDriversQuestionId(entry.id));
+}
+
 export interface CanonicalSelection {
   readonly roleFamily: RoleFamily;
   readonly seniority: CanonicalSeniorityBand | undefined;
@@ -349,10 +398,13 @@ export function canonicalEntriesForStage(
   stage: CanonicalQuestionEntry["stage"],
   selection: Pick<CanonicalSelection, "roleFamily" | "seniority">
 ): CanonicalQuestionEntry[] {
-  // Work-style dilemmas are selected separately (always included) and never
-  // participate in the family/generic substitution logic.
+  // Work-style dilemmas and job-driver items are selected separately (always
+  // included) and never participate in the family/generic substitution logic.
   const stageEntries = CANONICAL_QUESTION_BANK.filter(
-    (entry) => entry.stage === stage && !isWorkStyleQuestionId(entry.id)
+    (entry) =>
+      entry.stage === stage &&
+      !isWorkStyleQuestionId(entry.id) &&
+      !isDriversQuestionId(entry.id)
   );
   const familySpecific = stageEntries.filter(
     (entry) =>

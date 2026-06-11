@@ -1,4 +1,5 @@
 import { enrichCompanyProfile } from "../company-enrichment";
+import { buildDriverInsights } from "../scoring/job-drivers/insights";
 
 import {
   getCandidatePreferenceFit,
@@ -107,6 +108,12 @@ export function createCompanyMatch(input: MatchingScoreInput): CompanyMatch {
       : undefined;
   const evidence = collectSupportingEvidence(dimensions);
   const missingData = collectMissingEvidence(dimensions);
+  // Phase 14: flag-only driver insights (realistic preview + discussion
+  // flags). Computed AFTER match_score — they cannot influence it.
+  const driverInsights = buildDriverInsights({
+    profile: scoringInput.driverProfile,
+    context: scoringInput.role.calibration?.driver_context,
+  });
 
   return {
     match_id: matchId,
@@ -136,6 +143,7 @@ export function createCompanyMatch(input: MatchingScoreInput): CompanyMatch {
     candidate_decision: candidateDecision,
     employer_visibility: buildEmployerVisibility(candidateDecision, matchId),
     human_review_required: true,
+    ...(driverInsights ? { driver_insights: driverInsights } : {}),
     version,
     model_version: scoringInput.modelVersion ?? MATCHING_MODEL_VERSION,
     scoring_version: scoringInput.scoringVersion ?? version,

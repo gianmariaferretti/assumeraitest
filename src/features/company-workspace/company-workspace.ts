@@ -25,6 +25,10 @@ import {
 } from "@/features/interview-flow/integrity-signals";
 import { computeVerdictDueAt } from "@/features/matching/match-sla";
 import {
+  readDriverProfile,
+  readRoleDriverContext
+} from "@/features/scoring/job-drivers/types";
+import {
   readWorkStyleKey,
   readWorkStyleProfile
 } from "@/features/scoring/work-style/types";
@@ -940,6 +944,17 @@ export async function materializeCandidateMatchesForCandidate(
       const workStyleProfile = readWorkStyleProfile(
         (asRows(workStyleResult.error ? [] : workStyleResult.data)[0] ?? {}).profile
       );
+      // Phase 14: the candidate's job-driver profile feeds the FLAG-ONLY
+      // driver insights (realistic preview + discussion flags, never a score).
+      const driverResult = await adminClient
+        .from("driver_profiles")
+        .select("profile")
+        .eq("user_id", context.user.id)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      const driverProfile = readDriverProfile(
+        (asRows(driverResult.error ? [] : driverResult.data)[0] ?? {}).profile
+      );
       const upserts = asRows(rolesResult.data)
         .map((roleRow) =>
           buildCandidateVisibleMatchUpsert({
@@ -949,6 +964,7 @@ export async function materializeCandidateMatchesForCandidate(
               workspaceByCompanyId.get(readString(roleRow.company_id) ?? "") ?? {},
             weightSet,
             workStyleProfile,
+            driverProfile,
             existingRow: existingByMatchId.get(
               `match_${sanitizeId(context.user.id)}_${sanitizeId(readString(roleRow.role_id) ?? "")}`
             )
@@ -1684,6 +1700,7 @@ function buildCandidateVisibleMatchUpsert({
   workspaceRow,
   weightSet,
   workStyleProfile,
+  driverProfile,
   existingRow
 }: {
   readonly candidate: CandidateProfile;
@@ -1691,6 +1708,7 @@ function buildCandidateVisibleMatchUpsert({
   readonly workspaceRow: Record<string, unknown>;
   readonly weightSet: MatchWeightSet;
   readonly workStyleProfile?: ReturnType<typeof readWorkStyleProfile>;
+  readonly driverProfile?: ReturnType<typeof readDriverProfile>;
   readonly existingRow: Record<string, unknown> | undefined;
 }): Record<string, unknown> | null {
   const existingStatus = readString(existingRow?.status);
@@ -1710,6 +1728,7 @@ function buildCandidateVisibleMatchUpsert({
     company,
     weightSet,
     workStyleProfile,
+    driverProfile,
     matchId,
     inputHash: `candidate-visible:${candidate.candidate_id}:${role.role_id}`
   });
@@ -1754,6 +1773,9 @@ function buildCandidateVisibleMatchUpsert({
     }),
     evidence_payload: toJson({
       matchExplanation: match.explanations.candidate_facing,
+      // Phase 14: candidate-facing realistic job preview + discussion flags
+      // (flag-only; carries no score and is never employer-readable here).
+      driverInsights: match.driver_insights ?? null,
       employer_readable: false,
       hidden_until_candidate_consent: true,
       raw_cv_included: false,
@@ -1840,7 +1862,9 @@ function buildMatchingRoleProfile(row: Record<string, unknown>): RoleProfile {
       required_evidence: readStringArray(calibration.required_evidence),
       interview_modules: readStringArray(calibration.interview_modules),
       // Phase 13: company-declared work-style expectations (versioned).
-      work_style_key: readWorkStyleKey(calibration.work_style_key)
+      work_style_key: readWorkStyleKey(calibration.work_style_key),
+      // Phase 14: company-declared work-context reality (flag-only).
+      driver_context: readRoleDriverContext(calibration.driver_context)
     }
   };
 }
