@@ -106,15 +106,22 @@ function emptyTurnIntegritySignals(): {
   pasteCount: number;
   audioGapCount: number;
   maxAudioGapSeconds: number;
+  largestPasteChars: number;
+  pasteBurstCount: number;
 } {
   return {
     tabHiddenCount: 0,
     windowBlurCount: 0,
     pasteCount: 0,
     audioGapCount: 0,
-    maxAudioGapSeconds: 0
+    maxAudioGapSeconds: 0,
+    largestPasteChars: 0,
+    pasteBurstCount: 0
   };
 }
+
+/** Pastes inside this window count as one "burst" (content shape, not biometrics). */
+const PASTE_BURST_WINDOW_MS = 10_000;
 
 function activeModuleIdFor(session: InterviewSession): string | null {
   const planOrder = session.modulePlan
@@ -230,6 +237,7 @@ export function InterviewSessionClient({
   // no keystroke logging, no camera analysis, no biometrics (safety.ts
   // philosophy). Reset whenever a new server turn is issued.
   const integritySignalsRef = useRef(emptyTurnIntegritySignals());
+  const pasteTimestampsRef = useRef<number[]>([]);
   const lastVoiceActivityAtRef = useRef<number | null>(null);
   // Deepgram per-utterance confidences for the current turn (voice mode only):
   // averaged into asrConfidence for review routing, never a score input.
@@ -370,7 +378,8 @@ export function InterviewSessionClient({
     };
   }, []);
 
-  // Collect coarse focus/paste signals for the active turn (counts only).
+  // Collect coarse focus/paste signals for the active turn (counts + paste
+  // shape only — never the pasted content itself, never keystrokes).
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.hidden) {
@@ -380,8 +389,25 @@ export function InterviewSessionClient({
     const onWindowBlur = () => {
       integritySignalsRef.current.windowBlurCount += 1;
     };
-    const onPaste = () => {
+    const onPaste = (event: ClipboardEvent) => {
       integritySignalsRef.current.pasteCount += 1;
+      // Paste SHAPE: size of the largest single insertion and the densest
+      // burst inside a short window. The pasted text is read for its length
+      // only and immediately discarded.
+      const pastedLength = event.clipboardData?.getData("text")?.length ?? 0;
+      integritySignalsRef.current.largestPasteChars = Math.max(
+        integritySignalsRef.current.largestPasteChars,
+        pastedLength
+      );
+      const now = Date.now();
+      pasteTimestampsRef.current = [
+        ...pasteTimestampsRef.current.filter((at) => now - at <= PASTE_BURST_WINDOW_MS),
+        now
+      ];
+      integritySignalsRef.current.pasteBurstCount = Math.max(
+        integritySignalsRef.current.pasteBurstCount,
+        pasteTimestampsRef.current.length
+      );
     };
 
     document.addEventListener("visibilitychange", onVisibilityChange);
@@ -397,6 +423,7 @@ export function InterviewSessionClient({
   // A fresh server turn starts a fresh signal window.
   useEffect(() => {
     integritySignalsRef.current = emptyTurnIntegritySignals();
+    pasteTimestampsRef.current = [];
     lastVoiceActivityAtRef.current = null;
     asrConfidencesRef.current = [];
   }, [activeTurn?.turnId]);

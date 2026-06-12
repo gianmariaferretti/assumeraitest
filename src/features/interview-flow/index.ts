@@ -131,14 +131,34 @@ export {
 export {
   accumulateIntegritySummary,
   AUDIO_GAP_THRESHOLD_SECONDS,
+  CODE_MODULE_IDS,
   emptyModuleIntegritySummary,
   integritySummaryHighlights,
+  LARGE_PASTE_CHARS_THRESHOLD,
+  LOW_DISFLUENCY_MIN_TURNS,
   parseTurnIntegritySignals,
+  PASTE_BURST_COUNT_THRESHOLD,
   readModuleIntegritySummary,
+  UNIFORM_ONSET_MAX_STDDEV_SECONDS,
+  UNIFORM_ONSET_MIN_MEAN_SECONDS,
+  UNIFORM_ONSET_MIN_TURNS,
   type IntegrityAnomalyFlag,
+  type IntegrityFlagOptions,
   type ModuleIntegritySummary,
   type TurnIntegritySignals
 } from "./integrity-signals";
+export {
+  extractAnchorEntities,
+  extractAnchorEntitiesViaProvider,
+  followUpTextSafetyViolations,
+  MAX_ANCHOR_ENTITIES,
+  type AnchorExtractionOptions
+} from "./anchor-entities";
+export {
+  isHighFluencyAnswer,
+  measureTextDisfluency,
+  type TextDisfluencyMeasure
+} from "./text-disfluency";
 export {
   conductTurn,
   type ConductTurnCandidateAnswer,

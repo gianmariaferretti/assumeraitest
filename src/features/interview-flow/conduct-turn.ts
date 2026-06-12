@@ -1,3 +1,4 @@
+import { extractAnchorEntitiesViaProvider } from "./anchor-entities";
 import {
   generateInterviewerTurn,
   type ConversationTurn,
@@ -158,6 +159,21 @@ export async function conductTurn(input: ConductTurnInput): Promise<ConductTurnR
   const session = advanced.session;
   const decision = advanced.decision;
 
+  // 3b. Anchored follow-up (anti-cheating v2): in exploration/challenge, when
+  // the funnel decided to follow up WITHIN its existing budget, ground the
+  // probe on concrete entities from the candidate's last answer. Deterministic
+  // extraction with an optional LLM pass behind the same provider options;
+  // offline-safe, never blocks the turn. The budget itself is untouched.
+  const anchorEntities =
+    decision.kind === "ask_follow_up" &&
+    (decision.phase === "exploration" || decision.phase === "challenge") &&
+    input.candidateAnswer
+      ? await extractAnchorEntitiesViaProvider(
+          { answerText: input.candidateAnswer.answerText },
+          input.interviewerOptions,
+        )
+      : [];
+
   // 4. Produce the single interviewer line for that decision (safety-filtered,
   // deterministic fallback inside the agent).
   const interviewerTurn = await generateInterviewerTurn({
@@ -166,6 +182,7 @@ export async function conductTurn(input: ConductTurnInput): Promise<ConductTurnR
     competency: input.competency,
     plannedQuestionText: input.plannedQuestionText,
     missingStarSummary: decision.missingStarElements,
+    anchorEntities,
     cvHook: input.cvHook,
     transcript: input.transcript,
     interviewLanguage: session.interviewLanguage,

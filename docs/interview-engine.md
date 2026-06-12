@@ -146,8 +146,18 @@ session state. A request that includes session/state fields is rejected with
 
 ## Voice (optional)
 
-- `src/features/live-interview/tts-provider.ts` — `elevenlabs | openai | mock`
-  behind `TTS_PROVIDER` (default `mock`, offline-safe), injectable `fetchImpl`.
+- `src/features/live-interview/tts-provider.ts` —
+  `elevenlabs | openai | openai-audio-native | mock` behind `TTS_PROVIDER`
+  (default `mock`, offline-safe), injectable `fetchImpl`.
+- **`openai-audio-native`** (experience-only, opt-in): one chat-completion
+  call with audio modality speaks the interviewer line directly, so intonation
+  adapts to the conversational content instead of a flat TTS read. Independent
+  implementation of the publicly known voice-native-interview idea (the
+  best-known reference implementation is PolyForm Noncommercial and was not
+  consulted). Trade-offs on record: de facto OpenAI-only today (tension with
+  the multi-provider strategy and EU data-residency/GDPR posture), higher
+  latency and cost than TTS — hence the default stays `mock`. Zero impact on
+  integrity or scoring; the interview runs identically without it.
 
 ## Defensibility mechanisms
 
@@ -196,6 +206,53 @@ input to any score computation.** Nothing under `src/features/scoring/`
 imports the integrity module; the summary is folded into the session strictly
 after the evaluator has run, and removing it changes no score. A flagged
 module means "look closer", never "score lower".
+
+## Anti-cheating v2 — anchored follow-ups + copilot-shaped flags
+
+Threat model: an external "answer copilot" (an invisible overlay that captures
+the question, sends it to an LLM, and has the candidate read or paste the
+answer back). Vectors we DELIBERATELY do not fight: no camera proctoring, no
+keystroke biometrics, no process inspection, no virtual-audio detection, no
+voice-print or audio features of any kind (`safety.ts` is non-negotiable).
+The real moat is the adaptive conversation, not surveillance.
+
+1. **Anchored follow-ups** (`interview-flow/anchor-entities.ts`, wired in
+   `conduct-turn.ts` + `interviewer-agent.ts`) — in exploration/challenge,
+   when the funnel decides to follow up WITHIN its existing budget, the probe
+   is grounded on 1–3 concrete entities extracted from the candidate's last
+   answer (a technology, a metric, a named decision). Deterministic text
+   extraction with an optional Anthropic pass behind the usual provider
+   pattern (injectable `fetchImpl`, budget recorder, offline fallback); LLM
+   anchors must appear verbatim in the answer. Every generated follow-up
+   passes the full `inspectQuestionSafety` gate before reaching the candidate;
+   anchors can never be protected traits. Outsourcing each anchored turn to an
+   external tool gets slower and less coherent as the thread tightens.
+
+2. **`uniform_response_onset`** — server-derived response latencies only. On
+   ≥ 4 turns (configurable), a near-constant onset (std dev ≤ 2s) whose mean
+   sits in the plausible LLM-round-trip band (≥ 8s) raises a descriptive
+   flag. What matters is the LOW VARIANCE — deliberately not a long-latency
+   rule; uniformly fast instinctive answerers never flag.
+
+3. **`low_disfluency_text`** — derived EXCLUSIVELY from the transcript TEXT
+   (`interview-flow/text-disfluency.ts`): written fillers, false starts,
+   self-corrections across the five interview languages. A streak of ≥ 3 long,
+   near-zero-disfluency voice answers flags. This does not violate
+   `safety.ts`: it reads the same text the evaluator already scores — never
+   audio, prosody, or accent. Text-mode turns are EXEMPT (typed answers are
+   legitimately clean; Phase 12 fairness).
+
+4. **`large_paste_burst`** — paste SHAPE on code-capable modules
+   (`work_sample`, `case`): one very large single insertion (≥ 400 chars,
+   configurable) or a spike of pastes within seconds. A content signal, not
+   biometrics: the client reports only the length of the largest paste and the
+   burst count, validated and clamped server-side like every other counter.
+
+All v2 flags are descriptive "look closer" context with neutral reviewer
+wording ("uniform response onset across 5 turns"), shown read-only on
+consent-approved matches only, and — like v1 — NEVER an input to any score.
+No voice-print exists anywhere in signals, comments, or docs, and none may be
+added: it would contradict both `safety.ts` and the no-biometrics pitch.
 
 ## Scoring rigor
 
