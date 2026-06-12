@@ -1,3 +1,4 @@
+import { followUpTextSafetyViolations } from "./anchor-entities";
 import { containsEmployerVoice } from "./platform-neutrality";
 import { containsDisallowedQuestionText } from "./safety";
 import {
@@ -68,6 +69,12 @@ export interface InterviewerTurnInput {
   readonly plannedQuestionText?: string;
   /** STAR elements still missing (when decision.kind === ask_follow_up). */
   readonly missingStarSummary?: readonly string[];
+  /**
+   * Concrete entities extracted from the candidate's LAST answer (anti-cheating
+   * v2): an anchored follow-up must reference one of them, keeping the thread
+   * inside the candidate's own story instead of asking generic probes.
+   */
+  readonly anchorEntities?: readonly string[];
   /** A CV anchor used to open the rapport phase ("vedo che hai fatto X..."). */
   readonly cvHook?: string;
   /** Recent conversation for continuity ("come dicevi prima..."). */
@@ -200,6 +207,14 @@ export async function generateInterviewerTurn(
         outcome: "ok",
       });
       const text = sanitizeTurnText(extractTextContent(message));
+      // Anchored follow-ups get the FULL question safety inspection (protected
+      // traits + employer neutrality) before they can reach the candidate.
+      if (
+        input.decision.kind === "ask_follow_up" &&
+        followUpTextSafetyViolations(text).length > 0
+      ) {
+        throw new InterviewerSafetyError();
+      }
       return {
         text,
         phase: input.decision.phase,
@@ -242,6 +257,7 @@ function buildSystemPrompt(input: InterviewerTurnInput): string {
     "- Never ask or infer: age, nationality, citizenship, marital or family status, health or disability, religion, ethnicity, gender, pregnancy, personality, emotions, biometric data, face, voice tone, accent, or native-speaker status.",
     "- Never evaluate and never give scores: your only job is to run the conversation and collect concrete examples.",
     "- Keep it short (max 2-3 sentences). A follow-up targets exactly the missing element you are given.",
+    "- When anchor entities from the candidate's last answer are provided, the follow-up must reference one of them verbatim — stay inside the candidate's own story, never ask a generic probe and never add details the candidate did not say.",
     "Reply with ONLY the line to say to the candidate, no quotes, no preamble, no meta-commentary.",
   ].join(" ");
 }
@@ -268,6 +284,13 @@ function buildUserPayload(input: InterviewerTurnInput): Record<string, unknown> 
     follow_up: {
       is_follow_up: input.decision.kind === "ask_follow_up",
       missing_star_elements: input.missingStarSummary ?? input.decision.missingStarElements ?? [],
+      // Anchored follow-up (anti-cheating v2): ground the probe on something
+      // the candidate JUST said, never a generic "tell me more".
+      anchor_entities: input.anchorEntities ?? [],
+      anchor_instruction:
+        (input.anchorEntities?.length ?? 0) > 0
+          ? "The follow-up MUST explicitly reference one of anchor_entities verbatim (the candidate's own words) while targeting the missing STAR element. Never invent details that are not in the anchors."
+          : null,
     },
     cv_hook: input.decision.phase === "rapport" ? (input.cvHook ?? null) : null,
     recent_transcript: (input.transcript ?? []).slice(-6).map((turn) => ({
@@ -306,6 +329,16 @@ function deterministicTurn(
 function buildDeterministicText(input: InterviewerTurnInput): string {
   if (input.decision.kind === "ask_follow_up") {
     const missing = input.missingStarSummary ?? input.decision.missingStarElements ?? [];
+    const anchor = input.anchorEntities?.[0];
+    if (anchor) {
+      // Anchored deterministic follow-up: reference the candidate's own words.
+      // Gate it through the full safety inspection; degrade to the plain
+      // STAR probe if the anchor somehow makes the line unsafe.
+      const anchored = anchoredFollowUpForMissing(anchor, missing[0]);
+      if (followUpTextSafetyViolations(anchored).length === 0) {
+        return anchored;
+      }
+    }
     return followUpForMissing(missing[0]);
   }
 
@@ -328,6 +361,21 @@ function buildDeterministicText(input: InterviewerTurnInput): string {
       return "Per chiudere: cosa ti attira di questo ruolo, e c'è qualcosa che vorresti chiedere tu a noi?";
     default:
       return "Raccontami un esempio concreto e recente legato a questo tema.";
+  }
+}
+
+function anchoredFollowUpForMissing(anchor: string, missing: string | undefined): string {
+  switch (missing) {
+    case "situation":
+      return `Hai citato ${anchor}: aiutami a inquadrare meglio quel momento — quando è successo e in che contesto?`;
+    case "task":
+      return `Restiamo su ${anchor}: di cosa eri responsabile tu, in particolare, lì?`;
+    case "action":
+      return `Hai citato ${anchor}: cosa hai fatto tu personalmente su quel punto, passo dopo passo?`;
+    case "result":
+      return `Tornando a ${anchor}: com'è andata a finire? C'è un risultato che puoi quantificare?`;
+    default:
+      return `Hai citato ${anchor}: puoi raccontarmi più nel concreto cosa è successo lì?`;
   }
 }
 

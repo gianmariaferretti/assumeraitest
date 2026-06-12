@@ -444,6 +444,8 @@ export interface ConductServerTurnInput {
   readonly submittedTurnStatus?: "issued" | "evaluated" | "expired";
   /** Validated honest signals for this turn; never affects any score. */
   readonly integritySignals?: TurnIntegritySignals;
+  /** Module mode (Phase 12); text-mode turns are exempt from fluency flags. */
+  readonly interviewMode?: "voice" | "text";
   readonly now?: string;
   readonly evaluatorOptions?: EnsembleEvaluatorOptions;
   readonly interviewerOptions?: InterviewerAgentOptions;
@@ -630,7 +632,13 @@ export async function conductServerTurn(
         ...moduleForIntegrity,
         integritySummary: accumulateIntegritySummary(moduleForIntegrity.integritySummary, {
           signals: input.integritySignals,
-          responseLatencySeconds: elapsedSecondsForTurn
+          responseLatencySeconds: elapsedSecondsForTurn,
+          // v2 inputs, all server-held: the transcript text (text-only
+          // fluency analysis), the module mode (text mode is exempt), and
+          // the module id (paste-burst applies to code-capable modules).
+          answerText: input.answerText,
+          interviewMode: input.interviewMode,
+          moduleId: input.moduleId
         })
       }
     }

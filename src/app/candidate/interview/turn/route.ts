@@ -145,7 +145,8 @@ export async function POST(request: NextRequest) {
     turnStartedAt: moduleRow.turnStartedAt,
     turnCount: moduleRow.turnCount,
     submittedTurnStatus,
-    integritySignals: parsed.value.integritySignals
+    integritySignals: parsed.value.integritySignals,
+    interviewMode: moduleRow.interviewMode
   });
 
   if (result.kind === "rejected") {
