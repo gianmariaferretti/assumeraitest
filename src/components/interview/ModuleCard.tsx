@@ -29,6 +29,12 @@ const STATE_BADGE: Record<ModuleState, { label: string; icon: string; className:
   required: { label: "Required", icon: "●", className: "bg-violet-100 text-violet-800" },
   optional: { label: "Optional", icon: "○", className: "bg-slate-100 text-slate-700" },
   blocked: { label: "Locked", icon: "🔒", className: "bg-slate-100 text-slate-400" },
+  // Visible-as-locked: shown with the prerequisite reason, but not startable.
+  locked_pending_prerequisite: {
+    label: "Locked",
+    icon: "🔒",
+    className: "bg-slate-100 text-slate-500",
+  },
 };
 
 export function ModuleCard({
@@ -45,6 +51,7 @@ export function ModuleCard({
 
   const badge = STATE_BADGE[model.state];
   const isCompleted = model.state === "completed";
+  const isLockedPending = model.state === "locked_pending_prerequisite";
   const ctaLabel = model.sessionState === "in_progress" ? "Riprendi" : "Inizia";
 
   return (
@@ -75,6 +82,10 @@ export function ModuleCard({
         {isCompleted ? (
           <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700">
             ✓ Completed
+          </span>
+        ) : isLockedPending ? (
+          <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-400">
+            🔒 Locked
           </span>
         ) : (
           <button
