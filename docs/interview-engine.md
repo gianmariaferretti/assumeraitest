@@ -274,3 +274,62 @@ formulas and references: [`docs/scoring/methodology.md`](scoring/methodology.md)
 Thresholds are named `export const`s (e.g. `FOUR_FIFTHS_THRESHOLD = 0.8`,
 `COUNTERFACTUAL_DELTA_THRESHOLD = 1.0`, `COHORT_ESTABLISHED_AT_OR_ABOVE = 30`,
 `BOOTSTRAP_DEFAULT_ITERATIONS = 1000`) so the audit trail can cite them.
+
+## Assessment module library (22 modules)
+
+The interview engine extends into a configurable library of 22 assessment
+modules across four tracks + meta-modules, on top of the existing behavioral
+flow (which is unchanged). The library is driven by a single catalog and a
+scorer abstraction so aggregation and matching stay agnostic to how a module
+is graded.
+
+**Scorer abstraction** — `src/features/scoring/module-scoring/`. Every module
+declares a `ModuleScorerType` (`behavioral | deterministic | work_sample |
+language | interactive`) and every scorer emits the same scorer-agnostic
+`ModuleScoreResult` (0–100, per-competency evidence + plain-language reason +
+`needs_human_review`). `buildModuleScoreResult` enforces the shared rules:
+confidence-weighted roll-up, low-confidence → human review, and a fallback
+that can never claim high confidence. `behavioral-scorer-adapter.ts` projects
+the engine's native 1–10 BARS scale onto this shape; `to-matching-scorecard.ts`
+bridges results into the matching `InterviewScorecard` without touching the
+matching engine; `combine-results.ts` merges the parts of a mixed module.
+
+**Scorers**
+- Deterministic quiz engine — `src/features/scoring/quiz-engine/`: client-safe
+  item projection (answer key is server-only), 6 item types, partial credit,
+  server-authoritative timing (client clock never trusted; late answers graded
+  + flagged), verbatim audit evidence.
+- LLM open-response — `src/features/scoring/open-response/`: writing/speaking
+  (transcript only — never accent)/scenario/SJT justification; safety-routed
+  (protected-trait reasons drop to fallback); deterministic neutral fallback.
+- Work sample — `src/features/scoring/work-sample-scoring/`: deterministic
+  correctness from automated test results + the AI-assistant transcript
+  captured as review evidence (collaboration-with-AI is reviewed, never
+  auto-scored or penalized).
+- Interactive — `src/features/scoring/interactive/`: result-set equality (SQL)
+  and cell/chart end-state grading, computed in a sandbox and graded inside our
+  trust boundary.
+
+**Catalog & journey** — `src/features/assessment-catalog/`. `catalog.ts`
+declares all 22 modules (Phase 1–2 active with content; Phase 3 `draft`):
+track, scorer type, competencies, time budget (CORE = motivation + comm/
+problem-solving ≈ 20 min), CV auto-trigger keywords, and `descriptive_only`
+modules (work-style preferences) that never feed a quality score. `defaultModulePlan`
+gates every non-core module `unlocks_after` the CORE — so nothing unlockable
+appears until the CORE is done, and the unlock engine reports
+`locked_pending_prerequisite` (visible-as-locked, with a readable reason).
+Completing the CORE unlocks the set (coding auto-triggered by the CV); the
+existing `evaluateRequiredModulesGate` opens the match once required modules
+are complete. Seed item banks (`item-banks.ts`) include the classic 9-ball
+(2 weighings) and 12-ball unknown-direction (3 weighings) puzzles, tagged by
+difficulty.
+
+**Modalities** — `QuizRunner.tsx` (timed, never receives keys) and
+`CodeEditorPanel.tsx` (editor + logged AI-assistant transcript). Migration
+`20260613140000_quiz_item_banks_and_responses.sql`: banks are service-role only
+(keys never client-readable); responses are owner-read / service-role write with
+server-stamped timing.
+
+Every module is a recommendation for human review with evidence + an audit
+reason; no module returns an automated hire/reject, and none scores protected
+attributes (the `safety.ts` boundary is preserved across all new scorers).
