@@ -77,6 +77,13 @@ export interface ModuleRequirement {
   level: ModuleRequirementLevel;
   auto_trigger_keywords?: string[];
   rationale?: string;
+  /**
+   * Module ids that must be COMPLETED before this module unlocks. Until they
+   * are, the unlock engine reports `locked_pending_prerequisite` with a
+   * candidate-readable reason. Used to gate the journey (e.g. CORE before any
+   * unlockable module).
+   */
+  unlocks_after?: string[];
 }
 
 export interface RoleCalibration {
@@ -393,6 +400,10 @@ export function validateModulePlan(value: unknown, basePath = "module_plan"): Va
 
     if (entry.auto_trigger_keywords !== undefined) {
       validateStringArray(entry.auto_trigger_keywords, `${path}.auto_trigger_keywords`, issues);
+    }
+
+    if (entry.unlocks_after !== undefined) {
+      validateStringArray(entry.unlocks_after, `${path}.unlocks_after`, issues);
     }
 
     if (entry.rationale !== undefined && typeof entry.rationale !== "string") {

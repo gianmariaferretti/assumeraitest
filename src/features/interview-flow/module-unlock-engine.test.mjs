@@ -112,3 +112,98 @@ test("extractCandidateSkills normalizes synonyms: JS triggers a javascript keywo
   });
   assert.equal(byId(statuses).get("coding").state, "auto_triggered");
 });
+
+// ---------------------------------------------------------------------------
+// Module -> module prerequisites (Phase 0): locked_pending_prerequisite
+// ---------------------------------------------------------------------------
+
+test("a module with an unmet prerequisite is locked, visible, with a readable reason", () => {
+  const statuses = resolveModuleStatuses({
+    rolePlan: [
+      { module_id: "coding", level: "required", unlocks_after: ["core_comm"] },
+    ],
+    systemCoreModules: ["motivation", "core_comm"],
+    cvSkills: [],
+  });
+  const coding = byId(statuses).get("coding");
+  assert.equal(coding.state, "locked_pending_prerequisite");
+  assert.equal(coding.visible_to_candidate, true, "shown as locked, not hidden");
+  assert.match(coding.unlock_reason, /Complete core_comm first/);
+  // Still required_for_match, so the match gate stays correctly closed.
+  assert.equal(coding.required_for_match, true);
+});
+
+test("completing the prerequisite resolves the module to its base state", () => {
+  const statuses = resolveModuleStatuses({
+    rolePlan: [
+      { module_id: "coding", level: "auto_trigger", auto_trigger_keywords: ["python"], unlocks_after: ["core_comm"] },
+    ],
+    systemCoreModules: ["motivation", "core_comm"],
+    cvSkills: ["python"],
+    completedModuleIds: ["motivation", "core_comm"],
+  });
+  const coding = byId(statuses).get("coding");
+  assert.equal(coding.state, "auto_triggered", "base state restored once prereq done");
+});
+
+test("with multiple prerequisites, the reason names only the ones still missing", () => {
+  const statuses = resolveModuleStatuses({
+    rolePlan: [
+      { module_id: "leadership", level: "optional", unlocks_after: ["core_comm", "domain"] },
+    ],
+    systemCoreModules: ["motivation", "core_comm"],
+    cvSkills: [],
+    completedModuleIds: ["core_comm"], // domain still missing
+  });
+  const leadership = byId(statuses).get("leadership");
+  assert.equal(leadership.state, "locked_pending_prerequisite");
+  assert.match(leadership.unlock_reason, /domain/);
+  assert.doesNotMatch(leadership.unlock_reason, /core_comm/);
+});
+
+test("a completed module short-circuits even if it had prerequisites", () => {
+  const statuses = resolveModuleStatuses({
+    rolePlan: [
+      { module_id: "coding", level: "required", unlocks_after: ["core_comm"] },
+    ],
+    systemCoreModules: ["motivation", "core_comm"],
+    cvSkills: [],
+    completedModuleIds: ["coding"], // done, even though core_comm is not
+  });
+  assert.equal(byId(statuses).get("coding").state, "completed");
+});
+
+test("a self-listed prerequisite is ignored (config typo never deadlocks)", () => {
+  const statuses = resolveModuleStatuses({
+    rolePlan: [
+      { module_id: "coding", level: "required", unlocks_after: ["coding"] },
+    ],
+    cvSkills: [],
+  });
+  assert.equal(byId(statuses).get("coding").state, "required", "self-prereq filtered out");
+});
+
+test("a mutual prerequisite cycle locks both without looping", () => {
+  const statuses = resolveModuleStatuses({
+    rolePlan: [
+      { module_id: "a", level: "optional", unlocks_after: ["b"] },
+      { module_id: "b", level: "optional", unlocks_after: ["a"] },
+    ],
+    cvSkills: [],
+  });
+  assert.equal(byId(statuses).get("a").state, "locked_pending_prerequisite");
+  assert.equal(byId(statuses).get("b").state, "locked_pending_prerequisite");
+});
+
+test("a blocked module stays blocked and is never reclassified as locked-pending", () => {
+  const statuses = resolveModuleStatuses({
+    rolePlan: [
+      { module_id: "secret", level: "blocked", unlocks_after: ["core_comm"] },
+    ],
+    systemCoreModules: ["motivation", "core_comm"],
+    cvSkills: [],
+  });
+  const secret = byId(statuses).get("secret");
+  assert.equal(secret.state, "blocked");
+  assert.equal(secret.visible_to_candidate, false);
+});

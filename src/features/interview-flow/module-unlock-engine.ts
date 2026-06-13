@@ -12,7 +12,10 @@ export type ModuleState =
   | "auto_triggered"
   | "optional"
   | "blocked"
-  | "completed";
+  | "completed"
+  // Module→module prerequisite gating: shown to the candidate as locked, with a
+  // readable reason, until its `unlocks_after` modules are completed.
+  | "locked_pending_prerequisite";
 
 export interface ModuleStatus {
   module_id: string;
@@ -82,8 +85,44 @@ export function resolveModuleStatuses(args: ResolveModuleStatusesArgs): ModuleSt
       };
     }
 
+    // Module→module prerequisite gate. Blocked modules stay blocked (never
+    // shown); everything else with unmet prerequisites becomes
+    // locked_pending_prerequisite — visible to the candidate but not startable,
+    // with a reason naming ONLY the prerequisites still missing. A self-listed
+    // prerequisite is treated as a config typo and ignored to avoid a deadlock.
+    if (base.state !== "blocked") {
+      const prerequisites = (planById.get(moduleId)?.unlocks_after ?? []).filter(
+        (prerequisiteId) => prerequisiteId !== moduleId,
+      );
+      const missing = uniqueStrings(
+        prerequisites.filter((prerequisiteId) => !completedSet.has(prerequisiteId)),
+      );
+      if (missing.length > 0) {
+        return {
+          ...base,
+          state: "locked_pending_prerequisite",
+          unlock_reason: `Complete ${humanizeList(missing)} first to unlock this module.`,
+          blocking_reasons: [`Pending prerequisite module(s): ${missing.join(", ")}.`],
+          // Stays required_for_match if its base level required it, so the match
+          // gate correctly remains closed until the prerequisites are finished.
+          visible_to_candidate: true,
+        };
+      }
+    }
+
     return base;
   });
+}
+
+/** "a", "a and b", or "a, b, and c" — for candidate-readable reasons. */
+function humanizeList(values: readonly string[]): string {
+  if (values.length <= 1) {
+    return values[0] ?? "";
+  }
+  if (values.length === 2) {
+    return `${values[0]} and ${values[1]}`;
+  }
+  return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
 }
 
 /**
