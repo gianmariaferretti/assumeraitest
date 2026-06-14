@@ -29,6 +29,23 @@ function anchors(
 }
 
 const MODULE_COMPETENCIES: Record<string, BarsCompetency> = {
+  // Leadership / management (assessment module 20, senior roles only). Scored by
+  // the existing behavioral evaluator via the work_sample/behavioral path.
+  leadership: {
+    id: "leadership_management",
+    name: "Leadership and management",
+    tier: 3,
+    description:
+      "Delegates with clear ownership, manages stakeholders and trade-offs, and shows managerial empathy — evidenced by concrete past situations, never self-description.",
+    sbiQuestions: [],
+    bars: anchors(
+      ["takes credit or blames the team", "no concrete example of leading others"],
+      ["delegated a task with a clear owner and outcome", "handled one stakeholder concern"],
+      ["balanced competing stakeholders with an explicit trade-off and follow-through"],
+      ["grew people and outcomes: delegation, stakeholder alignment, and a measurable result"]
+    ),
+    redFlags: []
+  },
   motivation: {
     id: "motivation_role_fit",
     name: "Role motivation and work preference",

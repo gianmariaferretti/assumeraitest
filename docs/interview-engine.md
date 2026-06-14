@@ -311,7 +311,7 @@ matching engine; `combine-results.ts` merges the parts of a mixed module.
   trust boundary.
 
 **Catalog & journey** — `src/features/assessment-catalog/`. `catalog.ts`
-declares all 22 modules (Phase 1–2 active with content; Phase 3 `draft`):
+declares all 22 modules (all active across Phases 1–3; the `phase` field records build order):
 track, scorer type, competencies, time budget (CORE = motivation + comm/
 problem-solving ≈ 20 min), CV auto-trigger keywords, and `descriptive_only`
 modules (work-style preferences) that never feed a quality score. `defaultModulePlan`
@@ -333,3 +333,14 @@ server-stamped timing.
 Every module is a recommendation for human review with evidence + an audit
 reason; no module returns an automated hire/reject, and none scores protected
 attributes (the `safety.ts` boundary is preserved across all new scorers).
+
+**Phase 3 (enterprise breadth)** completes the library: cloud/DevOps and
+cybersecurity (deterministic banks + auto-trigger from infra CV skills),
+verbal reasoning, software/tool proficiency (interactive end-state), a
+role-knowledge TEMPLATE (`role-knowledge-template.ts` — one architecture,
+many domain variants, e.g. sales/finance), leadership (a senior-only
+`leadership_management` BARS competency, scored behaviorally), and a
+descriptive identity/honesty check (`identity-check.ts`) that stores only
+coarse boolean signals and NEVER auto-rejects — an unmet signal flags for
+human review.
+

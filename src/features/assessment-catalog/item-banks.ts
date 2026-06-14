@@ -1,5 +1,7 @@
 import type { QuizItemBankEntry } from "../scoring/quiz-engine/types";
 
+import { buildRoleKnowledgeBank, ROLE_KNOWLEDGE_DOMAINS } from "./role-knowledge-template";
+
 /**
  * Seed deterministic item banks for the Phase 1–2 answer-key modules. These are
  * SEEDS that prove the engine end-to-end and pin the schema; calibrated,
@@ -233,6 +235,102 @@ const AI_FLUENCY_QUIZ: QuizItemBankEntry[] = [
   ),
 ];
 
+/** Cloud / DevOps / systems (module 7); auto-triggered by infra CV skills. */
+const CLOUD_DEVOPS: QuizItemBankEntry[] = [
+  single(
+    "cloud_rollback",
+    "infra_troubleshooting",
+    3,
+    "A new deployment causes elevated 5xx errors in production. What is the safest FIRST action?",
+    [
+      { id: "a", label: "Roll back to the last known-good release, then investigate." },
+      { id: "b", label: "Push a quick hotfix straight to production without testing." },
+      { id: "c", label: "Wait to see if the errors resolve themselves." },
+      { id: "d", label: "Delete the production logs to reduce noise." },
+    ],
+    "a",
+    "Restoring service via rollback first, then diagnosing, minimizes user impact (standard incident response).",
+  ),
+  single(
+    "cloud_iac",
+    "cicd_iac",
+    2,
+    "What is the main benefit of infrastructure-as-code (IaC)?",
+    [
+      { id: "a", label: "Reproducible, reviewable, version-controlled infrastructure." },
+      { id: "b", label: "It removes the need for any testing." },
+      { id: "c", label: "It makes infrastructure impossible to change." },
+      { id: "d", label: "It only works for a single cloud provider." },
+    ],
+    "a",
+    "IaC makes infrastructure reproducible, reviewable, and versioned like application code.",
+  ),
+];
+
+/** Cybersecurity (module 8); deterministic part — open case is LLM-scored. */
+const CYBERSECURITY: QuizItemBankEntry[] = [
+  single(
+    "sec_sql_injection",
+    "vulnerability_recognition",
+    3,
+    "User input is concatenated directly into a SQL string. Which vulnerability is this, and the right fix?",
+    [
+      { id: "a", label: "SQL injection — use parameterized queries / prepared statements." },
+      { id: "b", label: "Cross-site scripting — escape HTML output." },
+      { id: "c", label: "No vulnerability — concatenation is safe." },
+      { id: "d", label: "Clickjacking — set frame headers." },
+    ],
+    "a",
+    "Concatenating untrusted input into SQL is classic SQL injection; parameterized queries are the fix.",
+  ),
+  single(
+    "sec_least_privilege",
+    "threat_modeling",
+    2,
+    "Which principle limits the blast radius if one service's credentials leak?",
+    [
+      { id: "a", label: "Least privilege." },
+      { id: "b", label: "Security through obscurity." },
+      { id: "c", label: "Shared admin accounts." },
+      { id: "d", label: "Disabling all logging." },
+    ],
+    "a",
+    "Least privilege limits what leaked credentials can access, shrinking the blast radius.",
+  ),
+];
+
+/** Verbal reasoning (module 12): inference from text. */
+const VERBAL_REASONING: QuizItemBankEntry[] = [
+  single(
+    "verbal_inference",
+    "verbal_reasoning",
+    3,
+    'Statement: "No proposal was approved unless it included a budget." A proposal was approved. What MUST be true?',
+    [
+      { id: "a", label: "It included a budget." },
+      { id: "b", label: "It was submitted late." },
+      { id: "c", label: "It was the only proposal." },
+      { id: "d", label: "It was rejected." },
+    ],
+    "a",
+    "Approval required a budget, so any approved proposal must have included one.",
+  ),
+  single(
+    "verbal_assumption",
+    "verbal_reasoning",
+    3,
+    'Argument: "We should ship now; every week of delay loses customers." Which assumption does this rely on?',
+    [
+      { id: "a", label: "Shipping now will not itself lose more customers than delay." },
+      { id: "b", label: "Customers never change their minds." },
+      { id: "c", label: "The product has no competitors." },
+      { id: "d", label: "Delay is free." },
+    ],
+    "a",
+    "The argument assumes shipping now does not cause greater loss (e.g. via quality issues) than the delay it avoids.",
+  ),
+];
+
 const ITEM_BANKS: Readonly<Record<string, readonly QuizItemBankEntry[]>> = {
   comm_problem_solving: LOGIC_PUZZLES,
   logical_reasoning: LOGICAL_REASONING,
@@ -241,6 +339,13 @@ const ITEM_BANKS: Readonly<Record<string, readonly QuizItemBankEntry[]>> = {
   language_reading: LANGUAGE_READING,
   situational_judgment: SITUATIONAL_JUDGMENT,
   ai_fluency: AI_FLUENCY_QUIZ,
+  // Phase 3 (enterprise breadth):
+  cloud_devops: CLOUD_DEVOPS,
+  cybersecurity: CYBERSECURITY,
+  verbal_reasoning: VERBAL_REASONING,
+  // Role-specific knowledge (module 21): the reusable template, seeded with the
+  // sales domain as the default variant; other domains build their own bank.
+  role_knowledge: buildRoleKnowledgeBank(ROLE_KNOWLEDGE_DOMAINS[0]),
 };
 
 export function getItemBank(moduleId: string): readonly QuizItemBankEntry[] {

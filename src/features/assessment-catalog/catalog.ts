@@ -4,9 +4,10 @@ import type { ModuleScorerType } from "../scoring/module-scoring/scorer-types";
 import type { AssessmentModuleDefinition } from "./types";
 
 /**
- * The 22-module catalog. Phase 1 + Phase 2 modules are `active` with content;
- * Phase 3 modules are `draft` (declared so the journey, matching surface, and
- * routing are forward-compatible, but not yet user-facing).
+ * The 22-module catalog. Phases 1–3 are all `active` with content; the `phase`
+ * field records build order. Leadership is `senior_only` (in the journey for
+ * senior roles only); work-style and identity are `descriptive_only` (never a
+ * quality score).
  *
  * CORE = motivation + communication/problem-solving. Every non-core module
  * `unlocks_after` the CORE, so nothing unlockable appears until the CORE is
@@ -93,7 +94,7 @@ export const ASSESSMENT_CATALOG: readonly AssessmentModuleDefinition[] = [
     title: "Cloud / DevOps / systems",
     track: "technical",
     scorer_type: "deterministic",
-    status: "draft",
+    status: "active",
     phase: 3,
     duration_budget_seconds: 900,
     competencies: ["infra_troubleshooting", "cicd_iac"],
@@ -105,7 +106,7 @@ export const ASSESSMENT_CATALOG: readonly AssessmentModuleDefinition[] = [
     title: "Cybersecurity",
     track: "technical",
     scorer_type: "deterministic",
-    status: "draft",
+    status: "active",
     phase: 3,
     duration_budget_seconds: 900,
     competencies: ["vulnerability_recognition", "threat_modeling"],
@@ -116,7 +117,7 @@ export const ASSESSMENT_CATALOG: readonly AssessmentModuleDefinition[] = [
     title: "Software / tool proficiency",
     track: "technical",
     scorer_type: "interactive",
-    status: "draft",
+    status: "active",
     phase: 3,
     duration_budget_seconds: 600,
     competencies: ["spreadsheet_proficiency"],
@@ -151,7 +152,7 @@ export const ASSESSMENT_CATALOG: readonly AssessmentModuleDefinition[] = [
     title: "Verbal reasoning",
     track: "cognitive",
     scorer_type: "deterministic",
-    status: "draft",
+    status: "active",
     phase: 3,
     duration_budget_seconds: 720,
     competencies: ["verbal_reasoning"],
@@ -244,7 +245,7 @@ export const ASSESSMENT_CATALOG: readonly AssessmentModuleDefinition[] = [
     title: "Leadership / management",
     track: "human",
     scorer_type: "behavioral",
-    status: "draft",
+    status: "active",
     phase: 3,
     duration_budget_seconds: 900,
     competencies: ["delegation", "stakeholder_management"],
@@ -258,7 +259,7 @@ export const ASSESSMENT_CATALOG: readonly AssessmentModuleDefinition[] = [
     title: "Role-specific knowledge",
     track: "meta",
     scorer_type: "deterministic",
-    status: "draft",
+    status: "active",
     phase: 3,
     duration_budget_seconds: 720,
     competencies: ["role_knowledge"],
@@ -269,7 +270,7 @@ export const ASSESSMENT_CATALOG: readonly AssessmentModuleDefinition[] = [
     title: "Identity / honesty check",
     track: "meta",
     scorer_type: "deterministic",
-    status: "draft",
+    status: "active",
     phase: 3,
     duration_budget_seconds: 120,
     competencies: ["identity_verification"],
@@ -305,15 +306,19 @@ export function isDescriptiveOnly(moduleId: string): boolean {
 export interface DefaultModulePlanOptions {
   /** Only include active modules (default true); drafts are forward-compat. */
   readonly activeOnly?: boolean;
-  /** Mark coding/technical auto-trigger modules; default true. */
-  readonly includeAutoTrigger?: boolean;
+  /**
+   * Candidate/role seniority. Senior-only modules (e.g. leadership) are included
+   * only when this is "senior"; otherwise they are left out of the journey.
+   */
+  readonly seniority?: "junior" | "mid" | "senior";
 }
 
 /**
  * Build a default `ModuleRequirement[]` for the candidate journey: CORE modules
  * required; every other module `unlocks_after` the CORE; modules with
  * auto-trigger keywords become `auto_trigger`, the rest `optional` (each unlock
- * grows the match surface without blocking the match gate).
+ * grows the match surface without blocking the match gate). Senior-only modules
+ * appear only for senior roles.
  */
 export function defaultModulePlan(options: DefaultModulePlanOptions = {}): ModuleRequirement[] {
   const activeOnly = options.activeOnly ?? true;
@@ -322,6 +327,7 @@ export function defaultModulePlan(options: DefaultModulePlanOptions = {}): Modul
 
   return modules
     .filter((module) => !module.core)
+    .filter((module) => !module.senior_only || options.seniority === "senior")
     .map((module) => {
       const base: ModuleRequirement = {
         module_id: module.module_id,

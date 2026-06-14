@@ -20,3 +20,15 @@ export {
   type WorkStyleForcedChoice,
   type WorkStylePreferenceProfile,
 } from "./work-style-preference";
+export {
+  buildRoleKnowledgeBank,
+  ROLE_KNOWLEDGE_DOMAINS,
+  type RoleKnowledgeDomainSpec,
+  type RoleKnowledgeItemSpec,
+} from "./role-knowledge-template";
+export {
+  runIdentityCheck,
+  type IdentityCheckResult,
+  type IdentityCheckSignals,
+  type IdentityCheckVerdict,
+} from "./identity-check";
